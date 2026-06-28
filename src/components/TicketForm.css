@@ -38,6 +38,18 @@
   border: 1px solid #ccc;
   border-radius: 6px;
   background: #fff;
+  box-sizing: border-box;
+}
+
+/* iOS Safari's native time picker control (more so than the date one) can
+   paint its internal content wider than the box it's actually laid out at,
+   so the box's right edge visually sticks out past every other .form-row's
+   right edge even though the grid track itself is the same width. Grid/flex
+   sizing can't fix a paint-time overflow — clipping it is what actually
+   pulls the visible right edge back into alignment. */
+.ticket-form input[type="date"],
+.ticket-form input[type="time"] {
+  overflow: hidden;
 }
 
 .ticket-form input[type="range"] {
