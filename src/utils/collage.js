@@ -3,6 +3,8 @@ import { mmToPx, TICKET_WIDTH_MM, TICKET_HEIGHT_MM, EXPORT_PIXEL_RATIO } from ".
 
 const GAP_MM = 10;
 const MARGIN_MM = 10;
+const SHADOW_BLUR_MM = 2.5;
+const SHADOW_OFFSET_MM = 1.2;
 
 // Stacks several already-rendered ticket DOM nodes into one tall PNG (all
 // tickets share the same fixed mm size regardless of template, so a simple
@@ -26,9 +28,16 @@ export async function exportCollage(nodes, { backgroundColor = "#ffffff" } = {})
   ctx.fillStyle = backgroundColor;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  const shadowBlurPx = mmToPx(SHADOW_BLUR_MM);
+  const shadowOffsetPx = mmToPx(SHADOW_OFFSET_MM);
   images.forEach((img, i) => {
     const y = marginPx + i * (heightPx + gapPx);
+    ctx.save();
+    ctx.shadowColor = "rgba(0, 0, 0, 0.35)";
+    ctx.shadowBlur = shadowBlurPx;
+    ctx.shadowOffsetY = shadowOffsetPx;
     ctx.drawImage(img, marginPx, y, widthPx, heightPx);
+    ctx.restore();
   });
 
   return canvas.toDataURL("image/png");
