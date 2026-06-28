@@ -1,5 +1,5 @@
-import { toPng } from "html-to-image";
 import { EXPORT_PIXEL_RATIO } from "./dimensions";
+import { captureNodeToCanvas } from "./exportBlend";
 
 // Exports a DOM node as a PNG at true 300 DPI, since the node itself is laid out
 // in real CSS millimetres. `pixelRatio` upscales from the 96dpi CSS rendering to
@@ -12,13 +12,8 @@ export async function exportNodeToPng(node, { pixelRatio = EXPORT_PIXEL_RATIO, b
   // preview (rendered directly by the browser, not re-rasterized) already
   // looks correct.
   if (document.fonts?.ready) await document.fonts.ready;
-  return toPng(node, {
-    pixelRatio,
-    backgroundColor,
-    cacheBust: true,
-    skipFonts: false,
-    filter: (el) => !el.classList?.contains("no-export"),
-  });
+  const canvas = await captureNodeToCanvas(node, { pixelRatio, backgroundColor });
+  return canvas.toDataURL("image/png");
 }
 
 export function downloadDataUrl(dataUrl, filename) {
