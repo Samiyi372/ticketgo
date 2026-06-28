@@ -88,7 +88,9 @@ async function drawDecorationLayer(ctx, imgEl, nodeRect, scale) {
   ctx.save();
   ctx.globalCompositeOperation = blend;
   ctx.globalAlpha = opacity;
-  ctx.drawImage(img, x, y, w, h);
+  // .decoration-img is object-fit: contain, not fill — drawing it stretched
+  // to exactly fill its (square) box would distort any non-square image.
+  drawContain(ctx, img, x, y, w, h);
   ctx.restore();
 }
 
@@ -97,6 +99,16 @@ function drawCover(ctx, img, x, y, w, h) {
   const coverScale = Math.max(w / img.width, h / img.height);
   const drawW = img.width * coverScale;
   const drawH = img.height * coverScale;
+  const dx = x + (w - drawW) / 2;
+  const dy = y + (h - drawH) / 2;
+  ctx.drawImage(img, dx, dy, drawW, drawH);
+}
+
+// Mirrors CSS object-fit: contain within the given rect.
+function drawContain(ctx, img, x, y, w, h) {
+  const containScale = Math.min(w / img.width, h / img.height);
+  const drawW = img.width * containScale;
+  const drawH = img.height * containScale;
   const dx = x + (w - drawW) / 2;
   const dy = y + (h - drawH) / 2;
   ctx.drawImage(img, dx, dy, drawW, drawH);
