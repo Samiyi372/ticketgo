@@ -4,6 +4,12 @@
   overflow: hidden;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
   background: #fff;
+  /* Forces a proper stacking context so mix-blend-mode (paper texture, the
+     draggable decoration image) blends against this ticket's own layers
+     instead of bubbling up to whatever ancestor happens to form one — and
+     works around a real iOS Safari bug where mix-blend-mode renders fully
+     invisible without an explicit isolation boundary. */
+  isolation: isolate;
 }
 
 .ticket-classic.mirrored {
@@ -101,6 +107,7 @@
   padding: 30px;
   box-sizing: border-box;
   overflow: hidden;
+  isolation: isolate;
 }
 
 .ticket-main {
@@ -111,6 +118,7 @@
   padding: 30px;
   box-sizing: border-box;
   overflow: hidden;
+  isolation: isolate;
 }
 
 .main-line {

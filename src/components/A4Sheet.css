@@ -22,6 +22,7 @@
   position: relative;
   box-sizing: border-box;
   flex-shrink: 0;
+  isolation: isolate;
 }
 
 /* Same texture/noise treatment as the ticket's own paper-texture/paper-noise
