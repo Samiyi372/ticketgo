@@ -18,6 +18,8 @@ export default function TicketHistory({ ticket, onLoad }) {
   const [selectedIds, setSelectedIds] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [collageBg, setCollageBg] = useState("#ffffff");
+  const [preview, setPreview] = useState(null);
   const nodeRefs = useRef(new Map());
   const pageRefs = useRef(new Map());
 
@@ -39,15 +41,15 @@ export default function TicketHistory({ ticket, onLoad }) {
     );
   }
 
-  async function handleCollageExport() {
+  async function previewCollage() {
     const selected = history.filter((entry) => selectedIds.includes(entry.id));
     if (selected.length === 0) return;
     setBusy(true);
     setError(null);
     try {
       const nodes = selected.map((entry) => nodeRefs.current.get(entry.id)).filter(Boolean);
-      const dataUrl = await exportCollage(nodes);
-      downloadDataUrl(dataUrl, `票根拼图_${selected.length}张_300dpi.png`);
+      const dataUrl = await exportCollage(nodes, { backgroundColor: collageBg });
+      setPreview({ dataUrl, count: selected.length });
     } catch (err) {
       console.error(err);
       setError("拼图导出失败，请重试");
@@ -123,13 +125,21 @@ export default function TicketHistory({ ticket, onLoad }) {
               </li>
             ))}
           </ul>
+          <label className="ticket-history-bg-picker">
+            拼图背景色
+            <input
+              type="color"
+              value={collageBg}
+              onChange={(e) => setCollageBg(e.target.value)}
+            />
+          </label>
           <button
             type="button"
             className="export-btn"
-            onClick={handleCollageExport}
+            onClick={previewCollage}
             disabled={busy || selectedIds.length === 0}
           >
-            {busy ? "正在生成…" : `导出拼图（已选 ${selectedIds.length} 张）`}
+            {busy ? "正在生成…" : `预览 / 导出拼图（已选 ${selectedIds.length} 张）`}
           </button>
           <button
             type="button"
@@ -173,6 +183,25 @@ export default function TicketHistory({ ticket, onLoad }) {
           );
         })}
       </div>
+
+      {preview && (
+        <div className="export-preview-overlay" onClick={() => setPreview(null)}>
+          <div className="export-preview-dialog" onClick={(e) => e.stopPropagation()}>
+            <img src={preview.dataUrl} alt="拼图预览" className="export-preview-img" />
+            <div className="export-preview-actions">
+              <button
+                className="export-btn"
+                onClick={() => downloadDataUrl(preview.dataUrl, `票根拼图_${preview.count}张_300dpi.png`)}
+              >
+                下载 PNG
+              </button>
+              <button className="export-btn secondary" onClick={() => setPreview(null)}>
+                关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

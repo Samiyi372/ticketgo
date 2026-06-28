@@ -8,7 +8,7 @@ const MARGIN_MM = 10;
 // tickets share the same fixed mm size regardless of template, so a simple
 // vertical stack needs no per-ticket scaling), each still captured at true
 // 300dpi like the single-ticket exports.
-export async function exportCollage(nodes) {
+export async function exportCollage(nodes, { backgroundColor = "#ffffff" } = {}) {
   const widthPx = mmToPx(TICKET_WIDTH_MM);
   const heightPx = mmToPx(TICKET_HEIGHT_MM);
   const gapPx = mmToPx(GAP_MM);
@@ -23,7 +23,7 @@ export async function exportCollage(nodes) {
   canvas.width = widthPx + marginPx * 2;
   canvas.height = marginPx * 2 + heightPx * images.length + gapPx * (images.length - 1);
   const ctx = canvas.getContext("2d");
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = backgroundColor;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   images.forEach((img, i) => {
