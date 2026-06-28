@@ -8,6 +8,10 @@
   object-fit: contain;
   user-select: none;
   -webkit-user-drag: none;
+  /* Without this, touch browsers intercept one/two-finger gestures on the
+     image for page scroll/native pinch-zoom instead of letting the pointer
+     handlers drive moving and pinch-resizing the decoration. */
+  touch-action: none;
 }
 
 .decoration-img.editable {
@@ -25,4 +29,5 @@
   border: 2px solid #fff;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
   cursor: nwse-resize;
+  touch-action: none;
 }

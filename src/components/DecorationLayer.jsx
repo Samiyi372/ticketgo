@@ -9,37 +9,99 @@ const BASE_SIZE_PX = 80;
 // decoration image. Position/scale are stored as plain numbers on the ticket
 // state (x/y in % of the container, scale as a multiplier of BASE_SIZE_PX) so
 // they survive into the exported PNG unchanged.
+//
+// On the image itself, one finger moves it and two fingers pinch-resize it —
+// the corner handle (mouse-drag only) stays as the precise way to resize
+// without a touchscreen. Both gestures are driven by Pointer Events, which
+// report each touch as its own pointerId, so active pointers are tracked in a
+// ref and the gesture (drag vs pinch) is re-derived whenever that count changes.
 export default function DecorationLayer({ decoration, onChange, editable }) {
   const containerRef = useRef(null);
+  const pointers = useRef(new Map());
+  const drag = useRef(null);
+  const pinch = useRef(null);
 
   if (!decoration.image) return null;
 
-  function startDrag(e) {
+  function activePoints() {
+    return Array.from(pointers.current.values());
+  }
+
+  function beginDrag(point) {
+    const container = containerRef.current.parentElement;
+    drag.current = {
+      rect: container.getBoundingClientRect(),
+      startX: point.x,
+      startY: point.y,
+      startPosX: decoration.x,
+      startPosY: decoration.y,
+    };
+  }
+
+  function beginPinch() {
+    const [a, b] = activePoints();
+    pinch.current = {
+      startDist: Math.hypot(a.x - b.x, a.y - b.y),
+      startScale: decoration.scale,
+    };
+  }
+
+  function handlePointerDown(e) {
     if (!editable) return;
     e.stopPropagation();
     e.preventDefault();
-    const container = containerRef.current.parentElement;
-    const rect = container.getBoundingClientRect();
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startPosX = decoration.x;
-    const startPosY = decoration.y;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-    function onMove(ev) {
-      const dxPct = ((ev.clientX - startX) / rect.width) * 100;
-      const dyPct = ((ev.clientY - startY) / rect.height) * 100;
+    if (pointers.current.size === 1) {
+      drag.current = null;
+      beginDrag({ x: e.clientX, y: e.clientY });
+    } else if (pointers.current.size === 2) {
+      drag.current = null;
+      beginPinch();
+    }
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerUp);
+  }
+
+  function handlePointerMove(e) {
+    if (!pointers.current.has(e.pointerId)) return;
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pointers.current.size >= 2 && pinch.current) {
+      const [a, b] = activePoints();
+      const dist = Math.hypot(a.x - b.x, a.y - b.y);
+      const ratio = dist / pinch.current.startDist;
       onChange({
         ...decoration,
-        x: clamp(startPosX + dxPct, 0, 100),
-        y: clamp(startPosY + dyPct, 0, 100),
+        scale: clamp(pinch.current.startScale * ratio, MIN_SCALE, MAX_SCALE),
+      });
+    } else if (pointers.current.size === 1 && drag.current) {
+      const dxPct = ((e.clientX - drag.current.startX) / drag.current.rect.width) * 100;
+      const dyPct = ((e.clientY - drag.current.startY) / drag.current.rect.height) * 100;
+      onChange({
+        ...decoration,
+        x: clamp(drag.current.startPosX + dxPct, 0, 100),
+        y: clamp(drag.current.startPosY + dyPct, 0, 100),
       });
     }
-    function onUp() {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
+  }
+
+  function handlePointerUp(e) {
+    pointers.current.delete(e.pointerId);
+    pinch.current = null;
+    drag.current = null;
+
+    if (pointers.current.size === 1) {
+      // One finger lifted out of a pinch — resume moving with the other.
+      beginDrag(activePoints()[0]);
+    } else if (pointers.current.size === 0) {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
     }
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
   }
 
   function startResize(e) {
@@ -88,7 +150,7 @@ export default function DecorationLayer({ decoration, onChange, editable }) {
         alt=""
         className={editable ? "decoration-img editable" : "decoration-img"}
         draggable={false}
-        onPointerDown={startDrag}
+        onPointerDown={handlePointerDown}
         style={{
           opacity: decoration.opacity,
           mixBlendMode: decoration.grayscale ? "multiply" : undefined,
