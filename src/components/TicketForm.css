@@ -190,3 +190,18 @@
   color: #888;
   margin: 4px 0 0;
 }
+
+@media (max-width: 860px) {
+  /* iOS Safari's native date/time picker controls enforce their own minimum
+     rendered width and don't fully respect width: 100%/min-width: 0 like the
+     other inputs do, so on narrow screens the date/time row ends up visibly
+     wider than every other .form-row (e.g. price/currency) even though they
+     share identical flex CSS. A smaller font size and tighter padding shrink
+     that native minimum enough to bring the boxes back in line. */
+  .ticket-form input[type="date"],
+  .ticket-form input[type="time"] {
+    min-width: 0;
+    font-size: 12px;
+    padding: 8px 6px;
+  }
+}
