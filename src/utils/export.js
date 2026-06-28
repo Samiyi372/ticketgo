@@ -5,6 +5,13 @@ import { EXPORT_PIXEL_RATIO } from "./dimensions";
 // in real CSS millimetres. `pixelRatio` upscales from the 96dpi CSS rendering to
 // 300dpi without changing the node's apparent on-screen size or layout.
 export async function exportNodeToPng(node, { pixelRatio = EXPORT_PIXEL_RATIO, backgroundColor } = {}) {
+  // html-to-image clones the node into an SVG and rasterizes that separately
+  // from the page's own rendering, so it needs the custom Google Fonts to have
+  // actually finished downloading by this point — otherwise it silently
+  // substitutes a fallback font in the exported image even though the live
+  // preview (rendered directly by the browser, not re-rasterized) already
+  // looks correct.
+  if (document.fonts?.ready) await document.fonts.ready;
   return toPng(node, {
     pixelRatio,
     backgroundColor,
