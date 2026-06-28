@@ -52,14 +52,29 @@
   border-radius: 6px;
 }
 
+/* Grid instead of flex: a flex item's automatic minimum size still defers to
+   its content's intrinsic min-content width unless every ancestor down to
+   the actual input honors min-width: 0 — and iOS Safari's native date/time
+   picker control doesn't reliably shrink that way, so that row kept
+   rendering wider than the other .form-row pairs despite identical CSS.
+   Grid's minmax(0, 1fr) sets the track's minimum explicitly to 0, which
+   guarantees every row split into equal-width columns regardless of what
+   any individual control wants to be. */
 .form-row {
-  display: flex;
-  align-items: flex-end;
+  display: grid;
+  /* grid-auto-flow + grid-auto-columns (not grid-template-columns:
+     repeat(auto-fit, ...)) because auto-fit's repetition count is itself
+     computed from the tracks' size, which is ambiguous/unreliable once that
+     size bottoms out at 0 — this form is used for both 2- and 3-column rows,
+     so it creates exactly one auto column per child placed, however many
+     there are. */
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  align-items: end;
   gap: 12px;
 }
 
 .form-row > label {
-  flex: 1;
   min-width: 0;
 }
 
