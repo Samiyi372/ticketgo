@@ -1,0 +1,261 @@
+.ticket-classic {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
+  background: #fff;
+}
+
+.ticket-classic.mirrored {
+  flex-direction: row-reverse;
+}
+
+.ticket-classic.mirrored .ticket-divider {
+  left: 80%;
+}
+
+/* main-content normally uses justify-content: space-between to spread its
+   3 children evenly, but that makes the middle item's position dependent on
+   redistributed free space — a margin on it gets partly absorbed back into
+   the recalculated gaps instead of actually moving it. For the mirrored
+   layout we want the theatre block to sit right under the show block
+   instead, so it switches to flex-start with the bottom row pinned down via
+   margin-top: auto instead of relying on space-between. */
+.ticket-classic.mirrored .main-content {
+  justify-content: flex-start;
+}
+
+.ticket-classic.mirrored .main-top {
+  margin-top: 12px;
+}
+
+.ticket-classic.mirrored .main-bottom {
+  margin-top: auto;
+}
+
+.paper-noise {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-image: var(--noise-bg);
+  background-size: 200px 200px;
+  mix-blend-mode: multiply;
+  opacity: 0.05;
+  pointer-events: none;
+}
+
+.paper-texture {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-size: cover;
+  background-position: center;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.ticket-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 20%;
+  z-index: 1;
+  border-left: 2px dashed rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+/* Mimics the punched-hole notches found on real perforated ticket stock: a
+   white circle straddling the card's top/bottom edge so the visible half
+   reads as a bite taken out of the card, blending into the page behind it. */
+.divider-notch {
+  position: absolute;
+  left: 20%;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.divider-notch-top {
+  top: 0;
+  transform: translate(-50%, -50%);
+}
+
+.divider-notch-bottom {
+  bottom: 0;
+  transform: translate(-50%, 50%);
+}
+
+.ticket-classic.mirrored .divider-notch {
+  left: 80%;
+}
+
+.ticket-stub {
+  position: relative;
+  flex: 0 0 20%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 30px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.ticket-main {
+  position: relative;
+  flex: 1 1 80%;
+  display: flex;
+  flex-direction: column;
+  padding: 30px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.main-line {
+  position: absolute;
+  left: 15px;
+  right: 15px;
+  height: 4px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.main-line-top {
+  top: 10px;
+}
+
+.main-line-bottom {
+  bottom: 10px;
+}
+
+.main-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  /* This box visually covers the whole ticket-main area (it's just transparent
+     where there's no text), so without this it sits on top of the decoration
+     image underneath and swallows every pointer event meant for dragging it. */
+  pointer-events: none;
+}
+
+.theatre-name {
+  font-family: "Cutive Mono", monospace;
+  font-size: 16px;
+  margin: 0 0 4px;
+  color: #1a1a1a;
+}
+
+.theatre-address {
+  font-family: "Cutive Mono", monospace;
+  font-size: 12px;
+  margin: 0;
+  color: #444;
+}
+
+.show-title {
+  font-family: "DM Mono", monospace;
+  font-weight: 500;
+  font-size: 20px;
+  margin: 0 0 6px;
+  color: #111;
+}
+
+.show-date {
+  font-family: "Cutive Mono", monospace;
+  font-size: 16px;
+  margin: 0;
+  color: #1a1a1a;
+}
+
+.main-bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.seat-row {
+  display: flex;
+  gap: 40px;
+}
+
+.ticket-price {
+  font-family: "Cutive Mono", monospace;
+  font-weight: 500;
+  font-size: 24px;
+  margin: 0;
+  margin-right: 16px;
+  color: #111;
+  white-space: nowrap;
+}
+
+.seat-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.seat-label {
+  font-family: "Cutive Mono", monospace;
+  font-size: 10px;
+  color: #777;
+}
+
+.seat-value {
+  font-family: "DM Mono", monospace;
+  font-weight: 400;
+  font-size: 16px;
+  color: #111;
+}
+
+.stub-stars {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 2px;
+  /* Lets the decoration image be dragged underneath this area too, now that
+     it can be moved across the whole ticket including the stub. */
+  pointer-events: none;
+}
+
+.stub-star {
+  font-size: 14px;
+  color: var(--stub-text, #1a1a1a);
+  opacity: 0.3;
+}
+
+.stub-star.filled {
+  opacity: 1;
+}
+
+.stub-bottom {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.stub-review {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--stub-text, #1a1a1a);
+  white-space: pre-line;
+}
+
+.stub-review.review-en {
+  font-family: "Cutive Mono", monospace;
+  font-weight: 300;
+}
+
+.stub-review.review-cjk {
+  font-family: "Noto Serif SC", serif;
+  font-weight: 300;
+}
+

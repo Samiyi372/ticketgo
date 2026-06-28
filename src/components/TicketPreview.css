@@ -1,0 +1,10 @@
+.ticket-preview-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.ticket-preview-scaled {
+  position: relative;
+  overflow: hidden;
+}

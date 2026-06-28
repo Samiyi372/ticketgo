@@ -1,0 +1,63 @@
+.a4-sheet-offscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.a4-sheet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 10mm;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.bleed-frame {
+  position: relative;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* Same texture/noise treatment as the ticket's own paper-texture/paper-noise
+   layers, just sized to the full bleed frame instead of the trim area, so the
+   paper texture also extends past the cut line instead of stopping dead at it. */
+.bleed-stub-image {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
+}
+
+.bleed-texture {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.bleed-noise {
+  position: absolute;
+  inset: 0;
+  background-image: var(--noise-bg);
+  background-size: 200px 200px;
+  mix-blend-mode: multiply;
+  opacity: 0.05;
+  pointer-events: none;
+}
+
+.crop-marks {
+  position: absolute;
+  z-index: 10;
+  outline: 1px dashed #888;
+  pointer-events: none;
+}

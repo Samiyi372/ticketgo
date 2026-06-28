@@ -1,0 +1,56 @@
+.app-layout {
+  display: flex;
+  height: 100vh;
+}
+
+.app-form-panel {
+  flex: 0 0 380px;
+  max-width: 380px;
+  padding: 24px;
+  background: #fafafa;
+  border-right: 1px solid #e0e0e0;
+  overflow-y: auto;
+}
+
+.app-title {
+  font-size: 20px;
+  margin: 0 0 20px;
+}
+
+.app-preview-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* flex-start (not center): a flex container that centers overflowing
+     content makes the start of that content unreachable by scrolling — the
+     browser centers it past the scrollable bounds, so scrolling up still
+     can't reveal the top once the panel (now taller, with the history list)
+     overflows the viewport. */
+  justify-content: flex-start;
+  gap: 24px;
+  padding: 32px;
+  background: #ececec;
+  overflow-y: auto;
+}
+
+@media (max-width: 860px) {
+  .app-layout {
+    height: auto;
+    flex-direction: column;
+  }
+
+  .app-form-panel {
+    flex: none;
+    max-width: none;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    overflow-y: visible;
+  }
+
+  .app-preview-panel {
+    padding: 20px;
+    overflow-y: visible;
+  }
+}
