@@ -4,6 +4,7 @@ import { convertToGrayscale } from "../utils/grayscale";
 import { CURRENCIES } from "../utils/currency";
 import { extractPalette } from "../utils/colorPalette";
 import { extractGradientColors } from "../utils/gradientFromImage";
+import { resizeImageDataUrl } from "../utils/resizeImage";
 import { TEXTURES } from "../utils/textures";
 import { TEMPLATES } from "./templates";
 import "./TicketForm.css";
@@ -38,7 +39,8 @@ export default function TicketForm({ ticket, onChange }) {
   // must be available either way.
   async function handleSubBgImageUpload(file) {
     if (!file) return;
-    const dataUrl = await readFileAsDataUrl(file);
+    const rawDataUrl = await readFileAsDataUrl(file);
+    const dataUrl = await resizeImageDataUrl(rawDataUrl);
     const colors = await extractGradientColors(dataUrl);
     onChange((prev) => {
       const next = structuredClone(prev);
@@ -76,7 +78,8 @@ export default function TicketForm({ ticket, onChange }) {
 
   async function handleDecorationUpload(file) {
     if (!file) return;
-    const original = await readFileAsDataUrl(file);
+    const rawDataUrl = await readFileAsDataUrl(file);
+    const original = await resizeImageDataUrl(rawDataUrl);
     const image = await applyDecorationEffects(original, ticket.decoration);
     onChange((prev) => {
       const next = structuredClone(prev);

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { loadHistory, addToHistory, removeFromHistory } from "../utils/history";
 import { exportNodeToPng, downloadDataUrl } from "../utils/export";
 import { exportCollage } from "../utils/collage";
@@ -14,7 +14,7 @@ function chunk(items, size) {
 }
 
 export default function TicketHistory({ ticket, onLoad }) {
-  const [history, setHistory] = useState(() => loadHistory());
+  const [history, setHistory] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -23,14 +23,18 @@ export default function TicketHistory({ ticket, onLoad }) {
   const nodeRefs = useRef(new Map());
   const pageRefs = useRef(new Map());
 
-  function handleSave() {
-    const { history: next, ok } = addToHistory(ticket);
+  useEffect(() => {
+    loadHistory().then(setHistory);
+  }, []);
+
+  async function handleSave() {
+    const { history: next, ok } = await addToHistory(ticket);
     setHistory(next);
     setError(ok ? null : "保存失败：浏览器本地存储空间不足，建议先删除一些历史记录");
   }
 
-  function handleRemove(id) {
-    setHistory(removeFromHistory(id));
+  async function handleRemove(id) {
+    setHistory(await removeFromHistory(id));
     setSelectedIds((prev) => prev.filter((selectedId) => selectedId !== id));
     nodeRefs.current.delete(id);
   }
