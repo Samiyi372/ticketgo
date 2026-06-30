@@ -18,6 +18,8 @@ export default function TicketHistory({ ticket, onLoad }) {
   const [selectedIds, setSelectedIds] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [progress, setProgress] = useState(null);
+  const progressTimerRef = useRef(null);
   const [collageBg, setCollageBg] = useState("#ffffff");
   const [collageBgImage, setCollageBgImage] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -30,6 +32,24 @@ export default function TicketHistory({ ticket, onLoad }) {
   useEffect(() => {
     loadHistory().then(setHistory);
   }, []);
+
+  function startProgress() {
+    let current = 0;
+    setProgress(0);
+    progressTimerRef.current = setInterval(() => {
+      current = Math.min(92, current + Math.max(0.4, (92 - current) * 0.035));
+      setProgress(Math.round(current));
+    }, 80);
+  }
+
+  function finishProgress() {
+    if (progressTimerRef.current) {
+      clearInterval(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+    setProgress(100);
+    setTimeout(() => setProgress(null), 400);
+  }
 
   async function handleSave() {
     const { history: next, ok } = await addToHistory(ticket);
@@ -103,13 +123,16 @@ export default function TicketHistory({ ticket, onLoad }) {
     if (selected.length === 0) return;
     setBusy(true);
     setError(null);
+    startProgress();
     try {
       const nodes = selected.map((entry) => nodeRefs.current.get(entry.id)).filter(Boolean);
       const dataUrl = await exportCollage(nodes, { backgroundColor: collageBg, backgroundImage: collageBgImage });
+      finishProgress();
       setPreview({ dataUrl, count: selected.length });
     } catch (err) {
       console.error(err);
       setError("拼图导出失败，请重试");
+      finishProgress();
     } finally {
       setBusy(false);
     }
@@ -120,6 +143,7 @@ export default function TicketHistory({ ticket, onLoad }) {
     if (selected.length === 0) return;
     setBusy(true);
     setError(null);
+    startProgress();
     try {
       const pageCount = chunk(selected, A4_COLLAGE_MAX_PER_PAGE).length;
       for (let i = 0; i < pageCount; i++) {
@@ -134,9 +158,11 @@ export default function TicketHistory({ ticket, onLoad }) {
         // of same-tick downloads as popup spam and silently blocking them.
         if (i < pageCount - 1) await new Promise((resolve) => setTimeout(resolve, 300));
       }
+      finishProgress();
     } catch (err) {
       console.error(err);
       setError("A4 拼版导出失败，请重试");
+      finishProgress();
     } finally {
       setBusy(false);
     }
@@ -312,6 +338,15 @@ export default function TicketHistory({ ticket, onLoad }) {
           );
         })}
       </div>
+
+      {progress !== null && (
+        <div className="loading-overlay">
+          <div className="loading-content">
+            <span className="loading-percent">{progress}%</span>
+            <span className="loading-hint">请稍候 赛博票房工作中</span>
+          </div>
+        </div>
+      )}
 
       {preview && (
         <div className="export-preview-overlay" onClick={() => setPreview(null)}>
