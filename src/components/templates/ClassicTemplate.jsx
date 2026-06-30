@@ -77,6 +77,17 @@ export default function ClassicTemplate({ ticket, onDecorationChange, editable, 
       </div>
 
       <div className="ticket-main" style={{ backgroundColor: colors.mainBg }}>
+        {colors.mainBgImage && (
+          <img
+            className="main-bg-image"
+            src={colors.mainBgImage}
+            alt=""
+            style={{
+              opacity: colors.mainBgImageOpacity,
+              mixBlendMode: colors.mainBgImageGrayscale ? "multiply" : "normal",
+            }}
+          />
+        )}
         {textureSrc ? (
           <div className="paper-texture" style={{ backgroundImage: `url(${textureSrc})` }} />
         ) : (

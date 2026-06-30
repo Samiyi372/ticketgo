@@ -46,18 +46,17 @@ export async function captureNodeToCanvas(node, { pixelRatio, backgroundColor } 
   return canvas;
 }
 
-async function drawBgImageLayer(ctx, el, nodeRect, scale) {
-  const rect = el.getBoundingClientRect();
+async function drawBgImageLayer(ctx, imgEl, nodeRect, scale) {
+  const rect = imgEl.getBoundingClientRect();
   const x = (rect.left - nodeRect.left) * scale;
   const y = (rect.top - nodeRect.top) * scale;
   const w = rect.width * scale;
   const h = rect.height * scale;
   if (w <= 0 || h <= 0) return;
+  if (!imgEl.src) return;
 
-  const src = extractBackgroundUrl(el);
-  if (!src) return;
-  const img = await loadImage(src);
-  const style = getComputedStyle(el);
+  const img = await loadImage(imgEl.src);
+  const style = getComputedStyle(imgEl);
   const opacity = parseFloat(style.opacity);
   const blend = style.mixBlendMode === "multiply" ? "multiply" : "source-over";
 

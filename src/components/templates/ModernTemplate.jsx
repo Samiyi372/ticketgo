@@ -61,6 +61,17 @@ export default function ModernTemplate({ ticket, onDecorationChange, editable, f
       </div>
 
       <div className="modern-main" style={{ backgroundColor: colors.mainBg }}>
+        {colors.mainBgImage && (
+          <img
+            className="main-bg-image"
+            src={colors.mainBgImage}
+            alt=""
+            style={{
+              opacity: colors.mainBgImageOpacity,
+              mixBlendMode: colors.mainBgImageGrayscale ? "multiply" : "normal",
+            }}
+          />
+        )}
         {textureSrc ? (
           <div className="paper-texture" style={{ backgroundImage: `url(${textureSrc})` }} />
         ) : (
