@@ -7,6 +7,7 @@ export default function BgDragLayer({ position, onChange }) {
 
   function onPointerDown(e) {
     e.stopPropagation();
+    e.preventDefault();
     const container = ref.current.parentElement;
     drag.current = {
       rect: container.getBoundingClientRect(),
@@ -14,15 +15,13 @@ export default function BgDragLayer({ position, onChange }) {
       startY: e.clientY,
       startPosX: position.x,
       startPosY: position.y,
+      pointerId: e.pointerId,
     };
     e.currentTarget.setPointerCapture(e.pointerId);
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-    window.addEventListener("pointercancel", onPointerUp);
   }
 
   function onPointerMove(e) {
-    if (!drag.current) return;
+    if (!drag.current || e.pointerId !== drag.current.pointerId) return;
     const { rect, startX, startY, startPosX, startPosY } = drag.current;
     const dxPct = ((e.clientX - startX) / rect.width) * 100;
     const dyPct = ((e.clientY - startY) / rect.height) * 100;
@@ -32,11 +31,10 @@ export default function BgDragLayer({ position, onChange }) {
     });
   }
 
-  function onPointerUp() {
-    drag.current = null;
-    window.removeEventListener("pointermove", onPointerMove);
-    window.removeEventListener("pointerup", onPointerUp);
-    window.removeEventListener("pointercancel", onPointerUp);
+  function onPointerUp(e) {
+    if (drag.current && e.pointerId === drag.current.pointerId) {
+      drag.current = null;
+    }
   }
 
   return (
@@ -44,6 +42,9 @@ export default function BgDragLayer({ position, onChange }) {
       ref={ref}
       className="bg-drag-layer no-export"
       onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
     />
   );
 }
