@@ -234,38 +234,39 @@ export default function TicketHistory({ ticket, onLoad }) {
               ? "正在生成…"
               : `导出 A4 拼版（每页最多 ${A4_COLLAGE_MAX_PER_PAGE} 张，共 ${collagePages.length} 页）`}
           </button>
-          <div className="ticket-history-archive">
-            <button
-              type="button"
-              className="export-btn secondary"
-              onClick={handleArchiveExport}
-              disabled={selectedIds.length === 0}
-            >
-              导出存档（已选 {selectedIds.length} 张）
-            </button>
-            <input
-              ref={archiveInputRef}
-              type="file"
-              accept=".ticketgo,application/json"
-              style={{ display: "none" }}
-              onChange={handleArchiveImport}
-            />
-            <button
-              type="button"
-              className="export-btn secondary"
-              onClick={() => { setImportResult(null); archiveInputRef.current?.click(); }}
-            >
-              导入存档
-            </button>
-          </div>
-          {importResult !== null && (
-            <p className="import-result">
-              {importResult > 0
-                ? `已导入 ${importResult} 张票根`
-                : "全部已存在，未重复导入"}
-            </p>
-          )}
         </>
+      )}
+
+      <div className="ticket-history-archive">
+        <button
+          type="button"
+          className="export-btn secondary"
+          onClick={handleArchiveExport}
+          disabled={selectedIds.length === 0}
+        >
+          导出存档（已选 {selectedIds.length} 张）
+        </button>
+        <input
+          ref={archiveInputRef}
+          type="file"
+          accept=".ticketgo,application/json"
+          style={{ display: "none" }}
+          onChange={handleArchiveImport}
+        />
+        <button
+          type="button"
+          className="export-btn secondary"
+          onClick={() => { setImportResult(null); archiveInputRef.current?.click(); }}
+        >
+          导入存档
+        </button>
+      </div>
+      {importResult !== null && (
+        <p className="import-result">
+          {importResult > 0
+            ? `已导入 ${importResult} 张票根`
+            : "全部已存在，未重复导入"}
+        </p>
       )}
 
       {collagePages.map((pageTickets, i) => (
