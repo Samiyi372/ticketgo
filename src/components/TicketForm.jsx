@@ -256,19 +256,19 @@ export default function TicketForm({ ticket, onChange }) {
             />
           </label>
         </div>
+        <label>
+          区 (Level)
+          <div className="input-with-action">
+            <input
+              type="text"
+              value={ticket.seat.level}
+              onChange={(e) => set("seat.level", e.target.value)}
+            />
+            <button type="button" className="uppercase-btn" title="转为全大写" onClick={() => set("seat.level", ticket.seat.level.toUpperCase())}>AA</button>
+            <button type="button" className="uppercase-btn" title="每词首字母大写" onClick={() => set("seat.level", toTitleCase(ticket.seat.level))}>Aa</button>
+          </div>
+        </label>
         <div className="form-row">
-          <label>
-            区 (Level)
-            <div className="input-with-action">
-              <input
-                type="text"
-                value={ticket.seat.level}
-                onChange={(e) => set("seat.level", e.target.value)}
-              />
-              <button type="button" className="uppercase-btn" title="转为全大写" onClick={() => set("seat.level", ticket.seat.level.toUpperCase())}>AA</button>
-              <button type="button" className="uppercase-btn" title="每词首字母大写" onClick={() => set("seat.level", toTitleCase(ticket.seat.level))}>Aa</button>
-            </div>
-          </label>
           <label>
             排 (Row)
             <div className="input-with-action">
@@ -283,15 +283,11 @@ export default function TicketForm({ ticket, onChange }) {
           </label>
           <label>
             号 (Seat)
-            <div className="input-with-action">
-              <input
-                type="text"
-                value={ticket.seat.seat}
-                onChange={(e) => set("seat.seat", e.target.value)}
-              />
-              <button type="button" className="uppercase-btn" title="转为全大写" onClick={() => set("seat.seat", ticket.seat.seat.toUpperCase())}>AA</button>
-              <button type="button" className="uppercase-btn" title="每词首字母大写" onClick={() => set("seat.seat", toTitleCase(ticket.seat.seat))}>Aa</button>
-            </div>
+            <input
+              type="text"
+              value={ticket.seat.seat}
+              onChange={(e) => set("seat.seat", e.target.value)}
+            />
           </label>
         </div>
         <div className="form-row">
