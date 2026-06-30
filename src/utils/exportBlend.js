@@ -19,7 +19,8 @@ export async function captureNodeToCanvas(node, { pixelRatio, backgroundColor } 
   const bgImageEls = Array.from(node.querySelectorAll(BG_IMAGE_SELECTOR));
   const textureEls = Array.from(node.querySelectorAll(TEXTURE_SELECTOR));
   const decorationEls = Array.from(node.querySelectorAll(".decoration-wrapper .decoration-img"));
-  const excluded = new Set([...bgImageEls, ...textureEls, ...decorationEls]);
+  const notchEls = Array.from(node.querySelectorAll(".divider-notch"));
+  const excluded = new Set([...bgImageEls, ...textureEls, ...decorationEls, ...notchEls]);
 
   const canvas = await toCanvas(node, {
     pixelRatio,
@@ -41,6 +42,26 @@ export async function captureNodeToCanvas(node, { pixelRatio, backgroundColor } 
   }
   for (const el of decorationEls) {
     await drawDecorationLayer(ctx, el, nodeRect, scale);
+  }
+
+  // Punch transparent holes where the divider notches sit. destination-out
+  // erases the canvas pixels inside each circle, making them truly transparent
+  // in the exported PNG (instead of painting a white disc that only looks like
+  // a cutout against a white page background).
+  if (notchEls.length > 0) {
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.globalAlpha = 1;
+    for (const el of notchEls) {
+      const rect = el.getBoundingClientRect();
+      const cx = (rect.left + rect.width / 2 - nodeRect.left) * scale;
+      const cy = (rect.top + rect.height / 2 - nodeRect.top) * scale;
+      const r = (rect.width / 2) * scale;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
   }
 
   return canvas;
