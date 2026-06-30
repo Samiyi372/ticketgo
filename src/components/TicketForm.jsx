@@ -569,7 +569,7 @@ export default function TicketForm({ ticket, onChange }) {
             checked={ticket.dividerNotches}
             onChange={(e) => set("dividerNotches", e.target.checked)}
           />
-          在主票和副票分界处加入白色半圆切口
+          在主票和副票分界处加入半圆切口
         </label>
         {ticket.showDivider && (
           <label>
