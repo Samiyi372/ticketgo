@@ -40,6 +40,8 @@ export const defaultTicket = {
   dividerColor: "black",
   dividerNotches: false,
   mainLines: false,
+  mainLineMode: "gradient",
+  mainLineColor: null,
   texture: "paper5",
   colors: {
     mainBg: "#ffffff",

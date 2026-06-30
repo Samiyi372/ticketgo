@@ -9,7 +9,7 @@ import { buildGradient, buildMeshGradient } from "../../utils/gradientFromImage"
 import "./ClassicTemplate.css";
 
 export default function ClassicTemplate({ ticket, onDecorationChange, editable, forwardedRef, mirrored = false, showInfoFirst = false, printMode = false }) {
-  const { theatre, show, date, time, seat, price, rating, review, decoration, colors, showDivider, dividerColor, dividerNotches, mainLines, texture, template } = ticket;
+  const { theatre, show, date, time, seat, price, rating, review, decoration, colors, showDivider, dividerColor, dividerNotches, mainLines, mainLineMode, mainLineColor, texture, template } = ticket;
   const reviewFont = isLatinOnly(review) ? "review-en" : "review-cjk";
   const hasPrice = price.amount !== "" && price.amount != null;
   const textureSrc = getTextureSrc(texture);
@@ -22,9 +22,11 @@ export default function ClassicTemplate({ ticket, onDecorationChange, editable, 
     colors.mainBgGradientType === "mesh" && colors.mainBgMeshPositions
       ? buildMeshGradient(colors.mainBgImageColors, colors.mainBgMeshPositions)
       : buildGradient(colors.mainBgImageColors, 180);
-  const lineFill = colors.subBgImage
-    ? buildGradient(colors.subBgImageColors, 90) || colors.subBg
-    : colors.subBg;
+  const lineFill = mainLineMode === "solid" && mainLineColor
+    ? mainLineColor
+    : (colors.subBgImage
+        ? buildGradient(colors.subBgImageColors, 90) || colors.subBg
+        : colors.subBg);
 
   const theatreBlock = (
     <div className="main-top">

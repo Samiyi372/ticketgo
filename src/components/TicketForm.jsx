@@ -700,8 +700,54 @@ export default function TicketForm({ ticket, onChange }) {
             checked={ticket.mainLines}
             onChange={(e) => set("mainLines", e.target.checked)}
           />
-          主票顶部和底部各加一条横线（与副票背景同色，若副票为图片背景则用提取的渐变色）
+          主票顶部和底部各加一条横线
         </label>
+        {ticket.mainLines && (
+          <div className="main-line-style">
+            <div className="main-line-mode-row">
+              <button
+                type="button"
+                className={ticket.mainLineMode === "gradient" ? "secondary active-mode" : "secondary"}
+                onClick={() => set("mainLineMode", "gradient")}
+              >
+                渐变
+              </button>
+              <button
+                type="button"
+                className={ticket.mainLineMode === "solid" ? "secondary active-mode" : "secondary"}
+                onClick={() => set("mainLineMode", "solid")}
+              >
+                纯色
+              </button>
+            </div>
+            {ticket.mainLineMode === "solid" && (
+              <div className="tint-row">
+                {palette.length > 0 && (
+                  <>
+                    {palette.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={ticket.mainLineColor === color ? "swatch active" : "swatch"}
+                        style={{ background: color }}
+                        onClick={() => set("mainLineColor", color)}
+                        title={color}
+                      />
+                    ))}
+                    <span className="tint-divider" />
+                  </>
+                )}
+                <input
+                  type="color"
+                  className="tint-color-picker"
+                  value={ticket.mainLineColor || "#000000"}
+                  onChange={(e) => set("mainLineColor", e.target.value)}
+                  title="自定义颜色"
+                />
+              </div>
+            )}
+          </div>
+        )}
         <label className="checkbox-label">
           <input
             type="checkbox"
