@@ -91,7 +91,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--notch-bg, #ffffff);
   z-index: 5;
   pointer-events: none;
 }

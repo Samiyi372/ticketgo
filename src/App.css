@@ -31,6 +31,7 @@
   gap: 24px;
   padding: 32px;
   background: #ececec;
+  --notch-bg: #ececec;
   overflow-y: auto;
 }
 
