@@ -76,7 +76,7 @@ export default function ClassicTemplate({ ticket, onDecorationChange, editable, 
         </div>
       </div>
 
-      <div className="ticket-main" style={{ backgroundColor: colors.mainBg }}>
+      <div className="ticket-main" style={{ backgroundColor: colors.mainBg, "--main-text": colors.mainTextColor }}>
         {colors.mainBgImage && (
           <img
             className="main-bg-image"

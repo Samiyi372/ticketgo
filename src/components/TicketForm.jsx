@@ -615,6 +615,25 @@ export default function TicketForm({ ticket, onChange }) {
           </div>
         </label>
         <label>
+          主票文字颜色
+          <div className="text-color-input">
+            <button
+              type="button"
+              className={ticket.colors.mainTextColor === "#1a1a1a" ? "swatch active" : "swatch"}
+              style={{ background: "#1a1a1a" }}
+              onClick={() => set("colors.mainTextColor", "#1a1a1a")}
+              aria-label="黑色"
+            />
+            <button
+              type="button"
+              className={ticket.colors.mainTextColor === "#ffffff" ? "swatch active" : "swatch"}
+              style={{ background: "#ffffff" }}
+              onClick={() => set("colors.mainTextColor", "#ffffff")}
+              aria-label="白色"
+            />
+          </div>
+        </label>
+        <label>
           副票文字颜色（打分 + 观后感）
           <div className="text-color-input">
             <button

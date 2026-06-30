@@ -60,7 +60,7 @@ export default function ModernTemplate({ ticket, onDecorationChange, editable, f
         </div>
       </div>
 
-      <div className="modern-main" style={{ backgroundColor: colors.mainBg }}>
+      <div className="modern-main" style={{ backgroundColor: colors.mainBg, "--main-text": colors.mainTextColor }}>
         {colors.mainBgImage && (
           <img
             className="main-bg-image"
