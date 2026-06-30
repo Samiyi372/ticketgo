@@ -18,6 +18,10 @@ function readFileAsDataUrl(file) {
   });
 }
 
+function toTitleCase(str) {
+  return str.replace(/\S+/g, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+}
+
 export default function TicketForm({ ticket, onChange }) {
   const [palette, setPalette] = useState([]);
 
@@ -179,6 +183,7 @@ export default function TicketForm({ ticket, onChange }) {
               onChange={(e) => set("theatre.name", e.target.value)}
             />
             <button type="button" className="uppercase-btn" title="转为全大写" onClick={() => set("theatre.name", ticket.theatre.name.toUpperCase())}>AA</button>
+            <button type="button" className="uppercase-btn" title="每词首字母大写" onClick={() => set("theatre.name", toTitleCase(ticket.theatre.name))}>Aa</button>
           </div>
         </label>
         <label>
@@ -210,6 +215,7 @@ export default function TicketForm({ ticket, onChange }) {
               onChange={(e) => set("show.title", e.target.value)}
             />
             <button type="button" className="uppercase-btn" title="转为全大写" onClick={() => set("show.title", ticket.show.title.toUpperCase())}>AA</button>
+            <button type="button" className="uppercase-btn" title="每词首字母大写" onClick={() => set("show.title", toTitleCase(ticket.show.title))}>Aa</button>
           </div>
         </label>
         <div className="form-row">
@@ -240,6 +246,7 @@ export default function TicketForm({ ticket, onChange }) {
                 onChange={(e) => set("seat.level", e.target.value)}
               />
               <button type="button" className="uppercase-btn" title="转为全大写" onClick={() => set("seat.level", ticket.seat.level.toUpperCase())}>AA</button>
+              <button type="button" className="uppercase-btn" title="每词首字母大写" onClick={() => set("seat.level", toTitleCase(ticket.seat.level))}>Aa</button>
             </div>
           </label>
           <label>
@@ -251,6 +258,7 @@ export default function TicketForm({ ticket, onChange }) {
                 onChange={(e) => set("seat.row", e.target.value)}
               />
               <button type="button" className="uppercase-btn" title="转为全大写" onClick={() => set("seat.row", ticket.seat.row.toUpperCase())}>AA</button>
+              <button type="button" className="uppercase-btn" title="每词首字母大写" onClick={() => set("seat.row", toTitleCase(ticket.seat.row))}>Aa</button>
             </div>
           </label>
           <label>
@@ -262,6 +270,7 @@ export default function TicketForm({ ticket, onChange }) {
                 onChange={(e) => set("seat.seat", e.target.value)}
               />
               <button type="button" className="uppercase-btn" title="转为全大写" onClick={() => set("seat.seat", ticket.seat.seat.toUpperCase())}>AA</button>
+              <button type="button" className="uppercase-btn" title="每词首字母大写" onClick={() => set("seat.seat", toTitleCase(ticket.seat.seat))}>Aa</button>
             </div>
           </label>
         </div>
