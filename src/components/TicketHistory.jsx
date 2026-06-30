@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import JSZip from "jszip";
 import { loadHistory, addToHistory, removeFromHistory, importEntries, saveHistoryOrder, loadHistoryOrder } from "../utils/history";
 import { exportNodeToPng, downloadDataUrl } from "../utils/export";
 import { exportCollage } from "../utils/collage";
@@ -186,6 +187,7 @@ export default function TicketHistory({ ticket, onLoad }) {
     startProgress();
     try {
       const pageCount = chunk(selected, A4_COLLAGE_MAX_PER_PAGE).length;
+      const zip = new JSZip();
       for (let i = 0; i < pageCount; i++) {
         const node = pageRefs.current.get(i);
         if (!node) continue;
@@ -194,11 +196,19 @@ export default function TicketHistory({ ticket, onLoad }) {
           backgroundColor: "#ffffff",
           notchColor: "#ffffff",
         });
-        downloadDataUrl(dataUrl, `票根A4拼版_第${i + 1}页_300dpi.png`);
-        // A short gap between downloads keeps browsers from treating a burst
-        // of same-tick downloads as popup spam and silently blocking them.
-        if (i < pageCount - 1) await new Promise((resolve) => setTimeout(resolve, 300));
+        // Strip the data URL prefix to get raw base64
+        const base64 = dataUrl.replace(/^data:image\/png;base64,/, "");
+        zip.file(`票根A4拼版_第${i + 1}页_300dpi.png`, base64, { base64: true });
       }
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `票根A4拼版_${pageCount}页_300dpi.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
       finishProgress();
     } catch (err) {
       console.error(err);
