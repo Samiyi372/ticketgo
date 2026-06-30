@@ -76,6 +76,47 @@ export default function TicketForm({ ticket, onChange }) {
     return result;
   }
 
+  async function handleMainBgImageUpload(file) {
+    if (!file) return;
+    const rawDataUrl = await readFileAsDataUrl(file);
+    const original = await resizeImageDataUrl(rawDataUrl);
+    const image = await applyDecorationEffects(original, {
+      grayscale: ticket.colors.mainBgImageGrayscale,
+      halftone: ticket.colors.mainBgImageHalftone,
+    });
+    onChange((prev) => {
+      const next = structuredClone(prev);
+      next.colors.mainBgImage = image;
+      next.colors.mainBgImageOriginal = original;
+      return next;
+    });
+  }
+
+  async function toggleMainBgImageEffect(key, checked) {
+    const effects = {
+      grayscale: key === "mainBgImageGrayscale" ? checked : ticket.colors.mainBgImageGrayscale,
+      halftone: key === "mainBgImageHalftone" ? checked : ticket.colors.mainBgImageHalftone,
+    };
+    const image = await applyDecorationEffects(ticket.colors.mainBgImageOriginal, effects);
+    onChange((prev) => {
+      const next = structuredClone(prev);
+      next.colors[key] = checked;
+      next.colors.mainBgImage = image;
+      return next;
+    });
+  }
+
+  function removeMainBgImage() {
+    onChange((prev) => {
+      const next = structuredClone(prev);
+      next.colors.mainBgImage = null;
+      next.colors.mainBgImageOriginal = null;
+      next.colors.mainBgImageHalftone = false;
+      next.colors.mainBgImageGrayscale = false;
+      return next;
+    });
+  }
+
   async function handleDecorationUpload(file) {
     if (!file) return;
     const rawDataUrl = await readFileAsDataUrl(file);
@@ -131,11 +172,14 @@ export default function TicketForm({ ticket, onChange }) {
         <legend>剧场信息</legend>
         <label>
           剧场名称
-          <input
-            type="text"
-            value={ticket.theatre.name}
-            onChange={(e) => set("theatre.name", e.target.value)}
-          />
+          <div className="input-with-action">
+            <input
+              type="text"
+              value={ticket.theatre.name}
+              onChange={(e) => set("theatre.name", e.target.value)}
+            />
+            <button type="button" className="uppercase-btn" title="转为全大写" onClick={() => set("theatre.name", ticket.theatre.name.toUpperCase())}>AA</button>
+          </div>
         </label>
         <label>
           地址
@@ -159,11 +203,14 @@ export default function TicketForm({ ticket, onChange }) {
         <legend>演出信息</legend>
         <label>
           剧名
-          <input
-            type="text"
-            value={ticket.show.title}
-            onChange={(e) => set("show.title", e.target.value)}
-          />
+          <div className="input-with-action">
+            <input
+              type="text"
+              value={ticket.show.title}
+              onChange={(e) => set("show.title", e.target.value)}
+            />
+            <button type="button" className="uppercase-btn" title="转为全大写" onClick={() => set("show.title", ticket.show.title.toUpperCase())}>AA</button>
+          </div>
         </label>
         <div className="form-row">
           <label>
@@ -186,27 +233,36 @@ export default function TicketForm({ ticket, onChange }) {
         <div className="form-row">
           <label>
             区 (Level)
-            <input
-              type="text"
-              value={ticket.seat.level}
-              onChange={(e) => set("seat.level", e.target.value)}
-            />
+            <div className="input-with-action">
+              <input
+                type="text"
+                value={ticket.seat.level}
+                onChange={(e) => set("seat.level", e.target.value)}
+              />
+              <button type="button" className="uppercase-btn" title="转为全大写" onClick={() => set("seat.level", ticket.seat.level.toUpperCase())}>AA</button>
+            </div>
           </label>
           <label>
             排 (Row)
-            <input
-              type="text"
-              value={ticket.seat.row}
-              onChange={(e) => set("seat.row", e.target.value)}
-            />
+            <div className="input-with-action">
+              <input
+                type="text"
+                value={ticket.seat.row}
+                onChange={(e) => set("seat.row", e.target.value)}
+              />
+              <button type="button" className="uppercase-btn" title="转为全大写" onClick={() => set("seat.row", ticket.seat.row.toUpperCase())}>AA</button>
+            </div>
           </label>
           <label>
             号 (Seat)
-            <input
-              type="text"
-              value={ticket.seat.seat}
-              onChange={(e) => set("seat.seat", e.target.value)}
-            />
+            <div className="input-with-action">
+              <input
+                type="text"
+                value={ticket.seat.seat}
+                onChange={(e) => set("seat.seat", e.target.value)}
+              />
+              <button type="button" className="uppercase-btn" title="转为全大写" onClick={() => set("seat.seat", ticket.seat.seat.toUpperCase())}>AA</button>
+            </div>
           </label>
         </div>
         <div className="form-row">
@@ -281,7 +337,7 @@ export default function TicketForm({ ticket, onChange }) {
             disabled={!ticket.decoration.original}
             onChange={(e) => toggleDecorationEffect("halftone", e.target.checked)}
           />
-          转换为点阵图案（黑白网点效果，自动去除白底）
+          转换为点阵图案（自动去除白底）
         </label>
         <label className="checkbox-label">
           <input
@@ -383,6 +439,48 @@ export default function TicketForm({ ticket, onChange }) {
             )}
           </label>
         </div>
+        <label>
+          主票背景图片（选填，覆盖在背景色之上）
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleMainBgImageUpload(e.target.files[0])}
+          />
+        </label>
+        {ticket.colors.mainBgImage && (
+          <>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={ticket.colors.mainBgImageHalftone}
+                onChange={(e) => toggleMainBgImageEffect("mainBgImageHalftone", e.target.checked)}
+              />
+              转换为点阵图案（自动去除白底）
+            </label>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={ticket.colors.mainBgImageGrayscale}
+                onChange={(e) => toggleMainBgImageEffect("mainBgImageGrayscale", e.target.checked)}
+              />
+              转换为黑白版本（与背景正片叠底）
+            </label>
+            <label>
+              透明度（{Math.round(ticket.colors.mainBgImageOpacity * 100)}%）
+              <input
+                type="range"
+                min="0.05"
+                max="1"
+                step="0.05"
+                value={ticket.colors.mainBgImageOpacity}
+                onChange={(e) => set("colors.mainBgImageOpacity", Number(e.target.value))}
+              />
+            </label>
+            <button type="button" className="secondary" onClick={removeMainBgImage}>
+              移除主票背景图片
+            </button>
+          </>
+        )}
         <label>
           副票背景图片（选填，覆盖在背景色之上）
           <input
