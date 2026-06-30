@@ -48,10 +48,10 @@ export const defaultTicket = {
     mainBgImageOpacity: 1,
     mainBgImageHalftone: false,
     mainBgImageGrayscale: false,
-    subBg: "#425385",
+    subBg: "#ffffff",
     subBgImage: null,
     subBgImageColors: null,
     subBgUseGradient: false,
-    subTextColor: "#ffffff",
+    subTextColor: "#1a1a1a",
   },
 };
