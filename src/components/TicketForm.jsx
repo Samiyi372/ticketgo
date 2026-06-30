@@ -24,6 +24,7 @@ function toTitleCase(str) {
 
 export default function TicketForm({ ticket, onChange }) {
   const [palette, setPalette] = useState([]);
+  const [uploadError, setUploadError] = useState(null);
 
   function set(path, value) {
     onChange((prev) => {
@@ -43,15 +44,21 @@ export default function TicketForm({ ticket, onChange }) {
   // must be available either way.
   async function handleSubBgImageUpload(file) {
     if (!file) return;
-    const rawDataUrl = await readFileAsDataUrl(file);
-    const dataUrl = await resizeImageDataUrl(rawDataUrl);
-    const colors = await extractGradientColors(dataUrl);
-    onChange((prev) => {
-      const next = structuredClone(prev);
-      next.colors.subBgImage = dataUrl;
-      next.colors.subBgImageColors = colors;
-      return next;
-    });
+    setUploadError(null);
+    try {
+      const rawDataUrl = await readFileAsDataUrl(file);
+      const dataUrl = await resizeImageDataUrl(rawDataUrl);
+      const colors = await extractGradientColors(dataUrl);
+      onChange((prev) => {
+        const next = structuredClone(prev);
+        next.colors.subBgImage = dataUrl;
+        next.colors.subBgImageColors = colors;
+        return next;
+      });
+    } catch (err) {
+      console.error(err);
+      setUploadError("图片上传失败，请重试");
+    }
   }
 
   async function handlePaletteUpload(file) {
@@ -82,18 +89,24 @@ export default function TicketForm({ ticket, onChange }) {
 
   async function handleMainBgImageUpload(file) {
     if (!file) return;
-    const rawDataUrl = await readFileAsDataUrl(file);
-    const original = await resizeImageDataUrl(rawDataUrl);
-    const image = await applyDecorationEffects(original, {
-      grayscale: ticket.colors.mainBgImageGrayscale,
-      halftone: ticket.colors.mainBgImageHalftone,
-    });
-    onChange((prev) => {
-      const next = structuredClone(prev);
-      next.colors.mainBgImage = image;
-      next.colors.mainBgImageOriginal = original;
-      return next;
-    });
+    setUploadError(null);
+    try {
+      const rawDataUrl = await readFileAsDataUrl(file);
+      const original = await resizeImageDataUrl(rawDataUrl);
+      const image = await applyDecorationEffects(original, {
+        grayscale: ticket.colors.mainBgImageGrayscale,
+        halftone: ticket.colors.mainBgImageHalftone,
+      });
+      onChange((prev) => {
+        const next = structuredClone(prev);
+        next.colors.mainBgImage = image;
+        next.colors.mainBgImageOriginal = original;
+        return next;
+      });
+    } catch (err) {
+      console.error(err);
+      setUploadError("图片上传失败，请重试");
+    }
   }
 
   async function toggleMainBgImageEffect(key, checked) {
@@ -123,15 +136,21 @@ export default function TicketForm({ ticket, onChange }) {
 
   async function handleDecorationUpload(file) {
     if (!file) return;
-    const rawDataUrl = await readFileAsDataUrl(file);
-    const original = await resizeImageDataUrl(rawDataUrl);
-    const image = await applyDecorationEffects(original, ticket.decoration);
-    onChange((prev) => {
-      const next = structuredClone(prev);
-      next.decoration.original = original;
-      next.decoration.image = image;
-      return next;
-    });
+    setUploadError(null);
+    try {
+      const rawDataUrl = await readFileAsDataUrl(file);
+      const original = await resizeImageDataUrl(rawDataUrl);
+      const image = await applyDecorationEffects(original, ticket.decoration);
+      onChange((prev) => {
+        const next = structuredClone(prev);
+        next.decoration.original = original;
+        next.decoration.image = image;
+        return next;
+      });
+    } catch (err) {
+      console.error(err);
+      setUploadError("图片上传失败，请重试");
+    }
   }
 
   async function toggleDecorationEffect(key, checked) {
@@ -156,6 +175,7 @@ export default function TicketForm({ ticket, onChange }) {
 
   return (
     <form className="ticket-form" onSubmit={(e) => e.preventDefault()}>
+      {uploadError && <p className="upload-error">{uploadError}</p>}
       <fieldset>
         <legend>模板</legend>
         <div className="template-row">

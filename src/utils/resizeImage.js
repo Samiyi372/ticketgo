@@ -14,11 +14,18 @@ const JPEG_QUALITY = 0.85;
 // real alpha channel means only images that truly need it pay the PNG cost;
 // everything else gets the much smaller JPEG encoding.
 function canvasHasTransparency(ctx, width, height) {
-  const { data } = ctx.getImageData(0, 0, width, height);
-  for (let i = 3; i < data.length; i += 4) {
-    if (data[i] < 255) return true;
+  // getImageData throws SecurityError in certain browser/deployment contexts
+  // even for data URLs (reproducible on iOS Safari). Default to JPEG on
+  // failure — the right choice for nearly all user photo uploads.
+  try {
+    const { data } = ctx.getImageData(0, 0, width, height);
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] < 255) return true;
+    }
+    return false;
+  } catch {
+    return false;
   }
-  return false;
 }
 
 export function resizeImageDataUrl(dataUrl, { maxDimension = MAX_DIMENSION, quality = JPEG_QUALITY } = {}) {

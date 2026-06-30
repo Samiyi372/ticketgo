@@ -243,6 +243,16 @@
   border-color: #bbb;
 }
 
+.upload-error {
+  margin: 0;
+  padding: 8px 12px;
+  background: #fff0f0;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #c0392b;
+}
+
 .bg-section-label {
   font-size: 12px;
   font-weight: 600;
