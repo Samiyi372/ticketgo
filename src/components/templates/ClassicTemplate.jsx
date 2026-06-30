@@ -5,7 +5,7 @@ import { getCurrencySymbol } from "../../utils/currency";
 import { getTextureSrc } from "../../utils/textures";
 import { resolveDecoration, applyDecorationPositionChange } from "../../utils/decorationPosition";
 import DecorationLayer from "../DecorationLayer";
-import { buildGradient } from "../../utils/gradientFromImage";
+import { buildGradient, buildMeshGradient } from "../../utils/gradientFromImage";
 import "./ClassicTemplate.css";
 
 export default function ClassicTemplate({ ticket, onDecorationChange, editable, forwardedRef, mirrored = false, showInfoFirst = false, printMode = false }) {
@@ -14,7 +14,10 @@ export default function ClassicTemplate({ ticket, onDecorationChange, editable, 
   const hasPrice = price.amount !== "" && price.amount != null;
   const textureSrc = getTextureSrc(texture);
   const dividerRgba = dividerColor === "white" ? "rgba(255, 255, 255, 0.6)" : "rgba(0, 0, 0, 0.25)";
-  const stubImageGradient = buildGradient(colors.subBgImageColors, 180);
+  const stubImageGradient =
+    colors.subBgGradientType === "mesh" && colors.subBgMeshPositions
+      ? buildMeshGradient(colors.subBgImageColors, colors.subBgMeshPositions)
+      : buildGradient(colors.subBgImageColors, 180);
   const lineFill = colors.subBgImage
     ? buildGradient(colors.subBgImageColors, 90) || colors.subBg
     : colors.subBg;

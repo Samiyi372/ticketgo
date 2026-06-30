@@ -52,6 +52,8 @@ export const defaultTicket = {
     subBgImage: null,
     subBgImageColors: null,
     subBgUseGradient: false,
+    subBgGradientType: "linear",
+    subBgMeshPositions: null,
     subTextColor: "#1a1a1a",
   },
 };

@@ -15,3 +15,24 @@ export function buildGradient(colors, angle = 180) {
   if (colors.length === 1) return colors[0];
   return `linear-gradient(${angle}deg, ${colors.join(", ")})`;
 }
+
+// Generates random center positions for a mesh gradient (values in percent,
+// kept in the 10-90 range so blobs always partially cover the card).
+export function randomMeshPositions(count) {
+  return Array.from({ length: count }, () => ({
+    cx: Math.round(10 + Math.random() * 80),
+    cy: Math.round(10 + Math.random() * 80),
+  }));
+}
+
+// Stacks overlapping radial gradients — one per color — to simulate the soft
+// color-blob "mesh gradient" look popularised by meshgradient.in.
+export function buildMeshGradient(colors, positions) {
+  if (!colors || colors.length === 0 || !positions || positions.length === 0) return null;
+  const base = colors[colors.length - 1];
+  const layers = colors.map((color, i) => {
+    const { cx, cy } = positions[i] ?? { cx: 50, cy: 50 };
+    return `radial-gradient(ellipse at ${cx}% ${cy}%, ${color} 0%, transparent 72%)`;
+  });
+  return [...layers, base].join(", ");
+}

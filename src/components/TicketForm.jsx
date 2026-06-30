@@ -3,7 +3,7 @@ import { convertToHalftone } from "../utils/halftone";
 import { convertToGrayscale } from "../utils/grayscale";
 import { CURRENCIES } from "../utils/currency";
 import { extractPalette } from "../utils/colorPalette";
-import { extractGradientColors } from "../utils/gradientFromImage";
+import { extractGradientColors, randomMeshPositions } from "../utils/gradientFromImage";
 import { resizeImageDataUrl } from "../utils/resizeImage";
 import { TEXTURES } from "../utils/textures";
 import { TEMPLATES } from "./templates";
@@ -59,6 +59,16 @@ export default function TicketForm({ ticket, onChange }) {
       console.error(err);
       setUploadError("图片上传失败，请重试");
     }
+  }
+
+  function handleRandomizeMesh() {
+    onChange((prev) => {
+      const next = structuredClone(prev);
+      const count = next.colors.subBgImageColors?.length || 3;
+      next.colors.subBgMeshPositions = randomMeshPositions(count);
+      next.colors.subBgGradientType = "mesh";
+      return next;
+    });
   }
 
   async function handlePaletteUpload(file) {
@@ -454,10 +464,35 @@ export default function TicketForm({ ticket, onChange }) {
               <input
                 type="checkbox"
                 checked={ticket.colors.subBgUseGradient}
-                onChange={(e) => set("colors.subBgUseGradient", e.target.checked)}
+                onChange={(e) => {
+                  set("colors.subBgUseGradient", e.target.checked);
+                  if (!e.target.checked) set("colors.subBgGradientType", "linear");
+                }}
               />
               将背景图片转换为渐变色背景
             </label>
+            {ticket.colors.subBgUseGradient && (
+              <div className="mesh-gradient-row">
+                {ticket.colors.subBgGradientType === "mesh" ? (
+                  <>
+                    <button type="button" className="secondary" onClick={handleRandomizeMesh}>
+                      重新随机
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={() => set("colors.subBgGradientType", "linear")}
+                    >
+                      恢复线性渐变
+                    </button>
+                  </>
+                ) : (
+                  <button type="button" className="secondary" onClick={handleRandomizeMesh}>
+                    随机渐变
+                  </button>
+                )}
+              </div>
+            )}
             <button
               type="button"
               className="secondary"
@@ -467,6 +502,8 @@ export default function TicketForm({ ticket, onChange }) {
                   next.colors.subBgImage = null;
                   next.colors.subBgImageColors = null;
                   next.colors.subBgUseGradient = false;
+                  next.colors.subBgGradientType = "linear";
+                  next.colors.subBgMeshPositions = null;
                   return next;
                 })
               }
