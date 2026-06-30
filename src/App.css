@@ -12,9 +12,33 @@
   overflow-y: auto;
 }
 
+.app-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
 .app-title {
   font-size: 20px;
-  margin: 0 0 20px;
+  margin: 0;
+}
+
+.reset-btn {
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #f3f3f3;
+  color: #666;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.reset-btn:hover {
+  background: #e8e8e8;
+  border-color: #bbb;
+  color: #333;
 }
 
 .app-preview-panel {

@@ -22,7 +22,17 @@ function App() {
   return (
     <div className="app-layout">
       <aside className="app-form-panel">
-        <h1 className="app-title">票根生成器</h1>
+        <div className="app-form-header">
+          <h1 className="app-title">票根生成器</h1>
+          <button
+            type="button"
+            className="reset-btn"
+            onClick={() => setTicket(defaultTicket)}
+            title="清除当前设计，恢复默认值（不影响历史记录）"
+          >
+            清除设计
+          </button>
+        </div>
         <TicketForm ticket={ticket} onChange={setTicket} />
       </aside>
       <main className="app-preview-panel">
