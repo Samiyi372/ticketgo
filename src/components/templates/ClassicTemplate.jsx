@@ -18,6 +18,10 @@ export default function ClassicTemplate({ ticket, onDecorationChange, editable, 
     colors.subBgGradientType === "mesh" && colors.subBgMeshPositions
       ? buildMeshGradient(colors.subBgImageColors, colors.subBgMeshPositions)
       : buildGradient(colors.subBgImageColors, 180);
+  const mainImageGradient =
+    colors.mainBgGradientType === "mesh" && colors.mainBgMeshPositions
+      ? buildMeshGradient(colors.mainBgImageColors, colors.mainBgMeshPositions)
+      : buildGradient(colors.mainBgImageColors, 180);
   const lineFill = colors.subBgImage
     ? buildGradient(colors.subBgImageColors, 90) || colors.subBg
     : colors.subBg;
@@ -79,8 +83,16 @@ export default function ClassicTemplate({ ticket, onDecorationChange, editable, 
         </div>
       </div>
 
-      <div className="ticket-main" style={{ backgroundColor: colors.mainBg, "--main-text": colors.mainTextColor }}>
-        {colors.mainBgImage && (
+      <div
+        className="ticket-main"
+        style={{
+          "--main-text": colors.mainTextColor,
+          ...(colors.mainBgUseGradient && mainImageGradient
+            ? { background: mainImageGradient }
+            : { backgroundColor: colors.mainBg }),
+        }}
+      >
+        {!colors.mainBgUseGradient && colors.mainBgImage && (
           <img
             className="main-bg-image"
             src={colors.mainBgImage}

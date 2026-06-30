@@ -103,14 +103,18 @@ export default function TicketForm({ ticket, onChange }) {
     try {
       const rawDataUrl = await readFileAsDataUrl(file);
       const original = await resizeImageDataUrl(rawDataUrl);
-      const image = await applyDecorationEffects(original, {
-        grayscale: ticket.colors.mainBgImageGrayscale,
-        halftone: ticket.colors.mainBgImageHalftone,
-      });
+      const [image, imgColors] = await Promise.all([
+        applyDecorationEffects(original, {
+          grayscale: ticket.colors.mainBgImageGrayscale,
+          halftone: ticket.colors.mainBgImageHalftone,
+        }),
+        extractGradientColors(original),
+      ]);
       onChange((prev) => {
         const next = structuredClone(prev);
         next.colors.mainBgImage = image;
         next.colors.mainBgImageOriginal = original;
+        next.colors.mainBgImageColors = imgColors;
         return next;
       });
     } catch (err) {
@@ -140,6 +144,20 @@ export default function TicketForm({ ticket, onChange }) {
       next.colors.mainBgImageOriginal = null;
       next.colors.mainBgImageHalftone = false;
       next.colors.mainBgImageGrayscale = false;
+      next.colors.mainBgImageColors = null;
+      next.colors.mainBgUseGradient = false;
+      next.colors.mainBgGradientType = "linear";
+      next.colors.mainBgMeshPositions = null;
+      return next;
+    });
+  }
+
+  function handleRandomizeMainMesh() {
+    onChange((prev) => {
+      const next = structuredClone(prev);
+      const count = next.colors.mainBgImageColors?.length || 3;
+      next.colors.mainBgMeshPositions = randomMeshPositions(count);
+      next.colors.mainBgGradientType = "mesh";
       return next;
     });
   }
@@ -420,30 +438,66 @@ export default function TicketForm({ ticket, onChange }) {
             <label className="checkbox-label">
               <input
                 type="checkbox"
-                checked={ticket.colors.mainBgImageHalftone}
-                onChange={(e) => toggleMainBgImageEffect("mainBgImageHalftone", e.target.checked)}
+                checked={ticket.colors.mainBgUseGradient}
+                onChange={(e) => {
+                  set("colors.mainBgUseGradient", e.target.checked);
+                  if (!e.target.checked) set("colors.mainBgGradientType", "linear");
+                }}
               />
-              转换为点阵图案（自动去除白底）
+              将背景图片转换为渐变色背景
             </label>
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={ticket.colors.mainBgImageGrayscale}
-                onChange={(e) => toggleMainBgImageEffect("mainBgImageGrayscale", e.target.checked)}
-              />
-              转换为黑白版本（与背景正片叠底）
-            </label>
-            <label>
-              透明度（{Math.round(ticket.colors.mainBgImageOpacity * 100)}%）
-              <input
-                type="range"
-                min="0.05"
-                max="1"
-                step="0.05"
-                value={ticket.colors.mainBgImageOpacity}
-                onChange={(e) => set("colors.mainBgImageOpacity", Number(e.target.value))}
-              />
-            </label>
+            {ticket.colors.mainBgUseGradient ? (
+              <div className="mesh-gradient-row">
+                {ticket.colors.mainBgGradientType === "mesh" ? (
+                  <>
+                    <button type="button" className="secondary" onClick={handleRandomizeMainMesh}>
+                      重新随机
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={() => set("colors.mainBgGradientType", "linear")}
+                    >
+                      恢复线性渐变
+                    </button>
+                  </>
+                ) : (
+                  <button type="button" className="secondary" onClick={handleRandomizeMainMesh}>
+                    随机渐变
+                  </button>
+                )}
+              </div>
+            ) : (
+              <>
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={ticket.colors.mainBgImageHalftone}
+                    onChange={(e) => toggleMainBgImageEffect("mainBgImageHalftone", e.target.checked)}
+                  />
+                  转换为点阵图案（自动去除白底）
+                </label>
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={ticket.colors.mainBgImageGrayscale}
+                    onChange={(e) => toggleMainBgImageEffect("mainBgImageGrayscale", e.target.checked)}
+                  />
+                  转换为黑白版本（与背景正片叠底）
+                </label>
+                <label>
+                  透明度（{Math.round(ticket.colors.mainBgImageOpacity * 100)}%）
+                  <input
+                    type="range"
+                    min="0.05"
+                    max="1"
+                    step="0.05"
+                    value={ticket.colors.mainBgImageOpacity}
+                    onChange={(e) => set("colors.mainBgImageOpacity", Number(e.target.value))}
+                  />
+                </label>
+              </>
+            )}
             <button type="button" className="secondary" onClick={removeMainBgImage}>
               移除主票背景图片
             </button>
