@@ -14,7 +14,7 @@ const BG_IMAGE_SELECTOR = ".main-bg-image";
 // reliably supported code path, so these specific layers are excluded from
 // html-to-image's capture and instead drawn back in by hand afterwards using
 // ctx.globalCompositeOperation.
-export async function captureNodeToCanvas(node, { pixelRatio, backgroundColor } = {}) {
+export async function captureNodeToCanvas(node, { pixelRatio, backgroundColor, fontEmbedCSS } = {}) {
   const nodeRect = node.getBoundingClientRect();
   const bgImageEls = Array.from(node.querySelectorAll(BG_IMAGE_SELECTOR));
   const textureEls = Array.from(node.querySelectorAll(TEXTURE_SELECTOR));
@@ -26,7 +26,8 @@ export async function captureNodeToCanvas(node, { pixelRatio, backgroundColor } 
     pixelRatio,
     backgroundColor,
     cacheBust: true,
-    skipFonts: false,
+    skipFonts: fontEmbedCSS != null ? undefined : false,
+    fontEmbedCSS: fontEmbedCSS ?? undefined,
     filter: (el) => !el.classList?.contains("no-export") && !excluded.has(el),
   });
 
