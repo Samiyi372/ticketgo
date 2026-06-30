@@ -10,7 +10,7 @@ const SHADOW_OFFSET_MM = 1.2;
 // tickets share the same fixed mm size regardless of template, so a simple
 // vertical stack needs no per-ticket scaling), each still captured at true
 // 300dpi like the single-ticket exports.
-export async function exportCollage(nodes, { backgroundColor = "#ffffff" } = {}) {
+export async function exportCollage(nodes, { backgroundColor = "#ffffff", backgroundImage = null } = {}) {
   const widthPx = mmToPx(TICKET_WIDTH_MM);
   const heightPx = mmToPx(TICKET_HEIGHT_MM);
   const gapPx = mmToPx(GAP_MM);
@@ -25,8 +25,18 @@ export async function exportCollage(nodes, { backgroundColor = "#ffffff" } = {})
   canvas.width = widthPx + marginPx * 2;
   canvas.height = marginPx * 2 + heightPx * images.length + gapPx * (images.length - 1);
   const ctx = canvas.getContext("2d");
-  ctx.fillStyle = backgroundColor;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (backgroundImage) {
+    const bgImg = await loadImage(backgroundImage);
+    // Scale image to fill the canvas width, then tile vertically.
+    const scaledH = bgImg.height * (canvas.width / bgImg.width);
+    for (let y = 0; y < canvas.height; y += scaledH) {
+      ctx.drawImage(bgImg, 0, y, canvas.width, scaledH);
+    }
+  } else {
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
 
   const shadowBlurPx = mmToPx(SHADOW_BLUR_MM);
   const shadowOffsetPx = mmToPx(SHADOW_OFFSET_MM);

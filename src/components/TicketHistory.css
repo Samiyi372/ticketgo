@@ -89,6 +89,14 @@
   border-radius: 6px;
 }
 
+.collage-bg-thumb {
+  width: 48px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
 .ticket-history-offscreen {
   position: fixed;
   top: 0;

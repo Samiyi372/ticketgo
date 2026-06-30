@@ -19,9 +19,11 @@ export default function TicketHistory({ ticket, onLoad }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [collageBg, setCollageBg] = useState("#ffffff");
+  const [collageBgImage, setCollageBgImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const nodeRefs = useRef(new Map());
   const pageRefs = useRef(new Map());
+  const bgImageInputRef = useRef(null);
 
   useEffect(() => {
     loadHistory().then(setHistory);
@@ -45,6 +47,18 @@ export default function TicketHistory({ ticket, onLoad }) {
     );
   }
 
+  async function handleCollageBgImageUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    setCollageBgImage(dataUrl);
+  }
+
   async function previewCollage() {
     const selected = history.filter((entry) => selectedIds.includes(entry.id));
     if (selected.length === 0) return;
@@ -52,7 +66,7 @@ export default function TicketHistory({ ticket, onLoad }) {
     setError(null);
     try {
       const nodes = selected.map((entry) => nodeRefs.current.get(entry.id)).filter(Boolean);
-      const dataUrl = await exportCollage(nodes, { backgroundColor: collageBg });
+      const dataUrl = await exportCollage(nodes, { backgroundColor: collageBg, backgroundImage: collageBgImage });
       setPreview({ dataUrl, count: selected.length });
     } catch (err) {
       console.error(err);
@@ -137,6 +151,32 @@ export default function TicketHistory({ ticket, onLoad }) {
               onChange={(e) => setCollageBg(e.target.value)}
             />
           </label>
+          <div className="ticket-history-bg-picker">
+            拼图背景图片
+            <input
+              ref={bgImageInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={handleCollageBgImageUpload}
+            />
+            {collageBgImage ? (
+              <>
+                <img src={collageBgImage} alt="" className="collage-bg-thumb" />
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => { setCollageBgImage(null); bgImageInputRef.current.value = ""; }}
+                >
+                  移除
+                </button>
+              </>
+            ) : (
+              <button type="button" className="secondary" onClick={() => bgImageInputRef.current?.click()}>
+                上传
+              </button>
+            )}
+          </div>
           <button
             type="button"
             className="export-btn"
