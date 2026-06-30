@@ -11,22 +11,45 @@ export default function ExportPanel({ ticketRef, ticket }) {
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [progress, setProgress] = useState(null);
+  const progressTimerRef = useRef(null);
 
   function fileName(suffix) {
     const base = (ticket.show.title || "ticket").trim().replace(/\s+/g, "_");
     return `${base}_${suffix}.png`;
   }
 
+  function startProgress() {
+    let current = 0;
+    setProgress(0);
+    progressTimerRef.current = setInterval(() => {
+      current = Math.min(92, current + Math.max(0.4, (92 - current) * 0.035));
+      setProgress(Math.round(current));
+    }, 80);
+  }
+
+  function finishProgress() {
+    if (progressTimerRef.current) {
+      clearInterval(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+    setProgress(100);
+    setTimeout(() => setProgress(null), 400);
+  }
+
   async function runExport(mode, node, options, suffix) {
     if (!node) return;
     setBusy(mode);
     setError(null);
+    startProgress();
     try {
       const dataUrl = await exportNodeToPng(node, options);
+      finishProgress();
       downloadDataUrl(dataUrl, fileName(suffix));
     } catch (err) {
       console.error(err);
       setError("导出失败，请重试");
+      finishProgress();
     } finally {
       setBusy(null);
     }
@@ -36,15 +59,18 @@ export default function ExportPanel({ ticketRef, ticket }) {
     if (!a4Ref.current) return;
     setBusy("a4");
     setError(null);
+    startProgress();
     try {
       const dataUrl = await exportNodeToPng(a4Ref.current, {
         pixelRatio: EXPORT_PIXEL_RATIO,
         backgroundColor: "#ffffff",
       });
+      finishProgress();
       setPreview(dataUrl);
     } catch (err) {
       console.error(err);
       setError("导出失败，请重试");
+      finishProgress();
     } finally {
       setBusy(null);
     }
@@ -88,6 +114,15 @@ export default function ExportPanel({ ticketRef, ticket }) {
                 关闭
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {progress !== null && (
+        <div className="loading-overlay">
+          <div className="loading-content">
+            <span className="loading-percent">{progress}%</span>
+            <span className="loading-hint">请稍候 赛博票房工作中</span>
           </div>
         </div>
       )}
