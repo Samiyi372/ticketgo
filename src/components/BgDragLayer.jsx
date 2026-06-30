@@ -26,8 +26,8 @@ export default function BgDragLayer({ position, onChange }) {
     const dxPct = ((e.clientX - startX) / rect.width) * 100;
     const dyPct = ((e.clientY - startY) / rect.height) * 100;
     onChange({
-      x: clamp(startPosX + dxPct, 0, 100),
-      y: clamp(startPosY + dyPct, 0, 100),
+      x: clamp(startPosX - dxPct, 0, 100),
+      y: clamp(startPosY - dyPct, 0, 100),
     });
   }
 
