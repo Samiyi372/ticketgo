@@ -95,6 +95,9 @@
   line-height: 1;
   color: #1a1a1a;
   letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+  min-width: 5ch;
+  text-align: center;
 }
 
 .loading-hint {
