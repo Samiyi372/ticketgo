@@ -260,6 +260,13 @@
   flex-wrap: wrap;
 }
 
+.tint-row .swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
 .tint-color-picker {
   width: 34px;
   height: 34px;
