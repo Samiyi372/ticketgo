@@ -158,6 +158,20 @@ export default function TicketHistory({ ticket, onLoad }) {
         <p className="ticket-history-hint">还没有保存过票根。</p>
       ) : (
         <>
+          <div className="ticket-history-select-row">
+            <button
+              type="button"
+              className="secondary"
+              onClick={() =>
+                selectedIds.length === history.length
+                  ? setSelectedIds([])
+                  : setSelectedIds(history.map((e) => e.id))
+              }
+            >
+              {selectedIds.length === history.length ? "取消全选" : "全选"}
+            </button>
+            <span className="ticket-history-count">共 {history.length} 张，已选 {selectedIds.length} 张</span>
+          </div>
           <ul className="ticket-history-list">
             {history.map((entry) => (
               <li key={entry.id} className="ticket-history-item">
