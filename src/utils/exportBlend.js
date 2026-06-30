@@ -3,24 +3,28 @@ import { toCanvas } from "html-to-image";
 const TEXTURE_SELECTOR = ".paper-texture, .paper-noise, .bleed-texture, .bleed-noise";
 const NOISE_SELECTOR = ".paper-noise, .bleed-noise";
 const NOISE_TILE_PX = 200;
-const BG_IMAGE_SELECTOR = ".main-bg-image";
 
 // iOS Safari's SVG-foreignObject rasterization (the technique html-to-image
 // relies on internally) doesn't apply CSS mix-blend-mode to content rendered
-// inside that foreignObject, so every multiply-blended layer — paper
-// texture/noise, the draggable decoration image — silently disappears from
-// exports on iPhone even though the live page renders them correctly.
-// Canvas2D's own compositing operations are a completely different, far more
-// reliably supported code path, so these specific layers are excluded from
-// html-to-image's capture and instead drawn back in by hand afterwards using
-// ctx.globalCompositeOperation.
+// inside that foreignObject, so multiply-blended layers — paper texture/noise
+// and the draggable decoration image — silently disappear from exports on iPhone
+// even though the live page renders them correctly. These layers are excluded from
+// html-to-image's capture and drawn back by hand using Canvas2D compositing.
+//
+// Background images (.main-bg-image) are intentionally NOT excluded: they must
+// render at z-index 0 (below text at z-index 2) so that white text remains
+// visible over a dark background image. Excluding them and redrawing afterwards
+// would place them above the text layer, making light-coloured text invisible.
 export async function captureNodeToCanvas(node, { pixelRatio, backgroundColor, fontEmbedCSS } = {}) {
   const nodeRect = node.getBoundingClientRect();
-  const bgImageEls = Array.from(node.querySelectorAll(BG_IMAGE_SELECTOR));
   const textureEls = Array.from(node.querySelectorAll(TEXTURE_SELECTOR));
   const decorationEls = Array.from(node.querySelectorAll(".decoration-wrapper .decoration-img"));
   const notchEls = Array.from(node.querySelectorAll(".divider-notch"));
-  const excluded = new Set([...bgImageEls, ...textureEls, ...decorationEls, ...notchEls]);
+  // Background images are NOT excluded — html-to-image renders them at the correct
+  // z-index (below text content), which is essential for white text to remain visible
+  // over a dark background image. Excluding them and redrawing afterwards would place
+  // them above the text layer, hiding any light-coloured text underneath.
+  const excluded = new Set([...textureEls, ...decorationEls, ...notchEls]);
 
   const canvas = await toCanvas(node, {
     pixelRatio,
@@ -34,10 +38,8 @@ export async function captureNodeToCanvas(node, { pixelRatio, backgroundColor, f
   const scale = canvas.width / nodeRect.width;
   const ctx = canvas.getContext("2d");
 
-  // Draw in z-index order: background image first, then texture, then decoration.
-  for (const el of bgImageEls) {
-    await drawBgImageLayer(ctx, el, nodeRect, scale);
-  }
+  // Draw in z-index order: texture first, then decoration.
+  // (Background images are already composited by html-to-image above.)
   for (const el of textureEls) {
     await drawTextureLayer(ctx, el, nodeRect, scale);
   }
@@ -66,30 +68,6 @@ export async function captureNodeToCanvas(node, { pixelRatio, backgroundColor, f
   }
 
   return canvas;
-}
-
-async function drawBgImageLayer(ctx, imgEl, nodeRect, scale) {
-  const rect = imgEl.getBoundingClientRect();
-  const x = (rect.left - nodeRect.left) * scale;
-  const y = (rect.top - nodeRect.top) * scale;
-  const w = rect.width * scale;
-  const h = rect.height * scale;
-  if (w <= 0 || h <= 0) return;
-  if (!imgEl.src) return;
-
-  const img = await loadImage(imgEl.src);
-  const style = getComputedStyle(imgEl);
-  const opacity = parseFloat(style.opacity);
-  const blend = style.mixBlendMode === "multiply" ? "multiply" : "source-over";
-
-  ctx.save();
-  ctx.globalCompositeOperation = blend;
-  ctx.globalAlpha = isNaN(opacity) ? 1 : opacity;
-  ctx.beginPath();
-  ctx.rect(x, y, w, h);
-  ctx.clip();
-  drawCover(ctx, img, x, y, w, h);
-  ctx.restore();
 }
 
 async function drawTextureLayer(ctx, el, nodeRect, scale) {
