@@ -97,6 +97,21 @@
   border: 1px solid #ccc;
 }
 
+.ticket-history-archive {
+  display: flex;
+  gap: 8px;
+}
+
+.ticket-history-archive .export-btn {
+  flex: 1;
+}
+
+.import-result {
+  margin: 0;
+  font-size: 13px;
+  color: #3a7a3a;
+}
+
 .ticket-history-offscreen {
   position: fixed;
   top: 0;

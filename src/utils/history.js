@@ -110,3 +110,28 @@ export async function removeFromHistory(id) {
   await runTransaction("readwrite", (store) => store.delete(id));
   return getAllEntries();
 }
+
+// Merges an array of { id, savedAt, ticket } entries from an archive file into
+// the local store, silently skipping any whose ID is already present so that
+// re-importing the same file is always safe. Does NOT enforce MAX_HISTORY —
+// deliberate imports should be kept intact.
+export async function importEntries(entries) {
+  if (!Array.isArray(entries) || entries.length === 0) {
+    return { history: await getAllEntries(), imported: 0 };
+  }
+  try {
+    const existing = await getAllEntries();
+    const existingIds = new Set(existing.map((e) => e.id));
+    const fresh = entries.filter(
+      (e) => e && e.id && e.ticket && !existingIds.has(e.id)
+    );
+    if (fresh.length > 0) {
+      await runTransaction("readwrite", (store) => {
+        for (const entry of fresh) store.put(entry);
+      });
+    }
+    return { history: await getAllEntries(), imported: fresh.length };
+  } catch {
+    return { history: await getAllEntries().catch(() => []), imported: 0 };
+  }
+}
