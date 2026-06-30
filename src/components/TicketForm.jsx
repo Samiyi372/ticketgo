@@ -268,7 +268,7 @@ export default function TicketForm({ ticket, onChange }) {
             <button type="button" className="uppercase-btn" title="每词首字母大写" onClick={() => set("seat.level", toTitleCase(ticket.seat.level))}>Aa</button>
           </div>
         </label>
-        <div className="form-row">
+        <div className="form-row form-row-row-seat">
           <label>
             排 (Row)
             <div className="input-with-action">

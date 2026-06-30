@@ -90,6 +90,11 @@
   min-width: 0;
 }
 
+.form-row-row-seat {
+  grid-auto-columns: unset;
+  grid-template-columns: 2fr 1fr;
+}
+
 .star-input {
   display: flex;
   gap: 4px;
