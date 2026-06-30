@@ -42,6 +42,11 @@ export const defaultTicket = {
   texture: "paper5",
   colors: {
     mainBg: "#ffffff",
+    mainBgImage: null,
+    mainBgImageOriginal: null,
+    mainBgImageOpacity: 1,
+    mainBgImageHalftone: false,
+    mainBgImageGrayscale: false,
     subBg: "#425385",
     subBgImage: null,
     subBgImageColors: null,

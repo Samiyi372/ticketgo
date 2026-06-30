@@ -3,6 +3,7 @@ import { toCanvas } from "html-to-image";
 const TEXTURE_SELECTOR = ".paper-texture, .paper-noise, .bleed-texture, .bleed-noise";
 const NOISE_SELECTOR = ".paper-noise, .bleed-noise";
 const NOISE_TILE_PX = 200;
+const BG_IMAGE_SELECTOR = ".main-bg-image";
 
 // iOS Safari's SVG-foreignObject rasterization (the technique html-to-image
 // relies on internally) doesn't apply CSS mix-blend-mode to content rendered
@@ -15,9 +16,10 @@ const NOISE_TILE_PX = 200;
 // ctx.globalCompositeOperation.
 export async function captureNodeToCanvas(node, { pixelRatio, backgroundColor } = {}) {
   const nodeRect = node.getBoundingClientRect();
+  const bgImageEls = Array.from(node.querySelectorAll(BG_IMAGE_SELECTOR));
   const textureEls = Array.from(node.querySelectorAll(TEXTURE_SELECTOR));
   const decorationEls = Array.from(node.querySelectorAll(".decoration-wrapper .decoration-img"));
-  const excluded = new Set([...textureEls, ...decorationEls]);
+  const excluded = new Set([...bgImageEls, ...textureEls, ...decorationEls]);
 
   const canvas = await toCanvas(node, {
     pixelRatio,
@@ -30,6 +32,10 @@ export async function captureNodeToCanvas(node, { pixelRatio, backgroundColor } 
   const scale = canvas.width / nodeRect.width;
   const ctx = canvas.getContext("2d");
 
+  // Draw in z-index order: background image first, then texture, then decoration.
+  for (const el of bgImageEls) {
+    await drawBgImageLayer(ctx, el, nodeRect, scale);
+  }
   for (const el of textureEls) {
     await drawTextureLayer(ctx, el, nodeRect, scale);
   }
@@ -38,6 +44,31 @@ export async function captureNodeToCanvas(node, { pixelRatio, backgroundColor } 
   }
 
   return canvas;
+}
+
+async function drawBgImageLayer(ctx, el, nodeRect, scale) {
+  const rect = el.getBoundingClientRect();
+  const x = (rect.left - nodeRect.left) * scale;
+  const y = (rect.top - nodeRect.top) * scale;
+  const w = rect.width * scale;
+  const h = rect.height * scale;
+  if (w <= 0 || h <= 0) return;
+
+  const src = extractBackgroundUrl(el);
+  if (!src) return;
+  const img = await loadImage(src);
+  const style = getComputedStyle(el);
+  const opacity = parseFloat(style.opacity);
+  const blend = style.mixBlendMode === "multiply" ? "multiply" : "source-over";
+
+  ctx.save();
+  ctx.globalCompositeOperation = blend;
+  ctx.globalAlpha = isNaN(opacity) ? 1 : opacity;
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  drawCover(ctx, img, x, y, w, h);
+  ctx.restore();
 }
 
 async function drawTextureLayer(ctx, el, nodeRect, scale) {
