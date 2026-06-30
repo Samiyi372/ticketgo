@@ -115,6 +115,23 @@ export async function removeFromHistory(id) {
 // the local store, silently skipping any whose ID is already present so that
 // re-importing the same file is always safe. Does NOT enforce MAX_HISTORY —
 // deliberate imports should be kept intact.
+const ORDER_KEY = "ticketgo_history_order";
+
+export function saveHistoryOrder(orderedIds) {
+  try {
+    localStorage.setItem(ORDER_KEY, JSON.stringify(orderedIds));
+  } catch {}
+}
+
+export function loadHistoryOrder() {
+  try {
+    const raw = localStorage.getItem(ORDER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function importEntries(entries) {
   if (!Array.isArray(entries) || entries.length === 0) {
     return { history: await getAllEntries(), imported: 0 };

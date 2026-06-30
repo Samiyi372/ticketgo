@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { loadHistory, addToHistory, removeFromHistory, importEntries } from "../utils/history";
+import { loadHistory, addToHistory, removeFromHistory, importEntries, saveHistoryOrder, loadHistoryOrder } from "../utils/history";
 import { exportNodeToPng, downloadDataUrl } from "../utils/export";
 import { exportCollage } from "../utils/collage";
 import { EXPORT_PIXEL_RATIO } from "../utils/dimensions";
@@ -19,7 +19,9 @@ export default function TicketHistory({ ticket, onLoad }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [progress, setProgress] = useState(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
   const progressTimerRef = useRef(null);
+  const dragSrcIdx = useRef(null);
   const [collageBg, setCollageBg] = useState("#ffffff");
   const [collageBgImage, setCollageBgImage] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -30,8 +32,46 @@ export default function TicketHistory({ ticket, onLoad }) {
   const archiveInputRef = useRef(null);
 
   useEffect(() => {
-    loadHistory().then(setHistory);
+    loadHistory().then((entries) => setHistory(applyOrder(entries, loadHistoryOrder())));
   }, []);
+
+  function applyOrder(entries, order) {
+    if (!order) return entries;
+    const map = new Map(entries.map((e) => [e.id, e]));
+    const ordered = order.filter((id) => map.has(id)).map((id) => map.get(id));
+    const inOrder = new Set(order);
+    const extra = entries.filter((e) => !inOrder.has(e.id));
+    return [...extra, ...ordered];
+  }
+
+  function handleDragStart(e, idx) {
+    dragSrcIdx.current = idx;
+    e.dataTransfer.effectAllowed = "move";
+  }
+
+  function handleDragOver(e, idx) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverIdx(idx);
+  }
+
+  function handleDrop(e, idx) {
+    e.preventDefault();
+    setDragOverIdx(null);
+    const src = dragSrcIdx.current;
+    if (src === null || src === idx) return;
+    const next = [...history];
+    const [item] = next.splice(src, 1);
+    next.splice(idx, 0, item);
+    dragSrcIdx.current = null;
+    setHistory(next);
+    saveHistoryOrder(next.map((e) => e.id));
+  }
+
+  function handleDragEnd() {
+    dragSrcIdx.current = null;
+    setDragOverIdx(null);
+  }
 
   function startProgress() {
     let current = 0;
@@ -199,8 +239,21 @@ export default function TicketHistory({ ticket, onLoad }) {
             <span className="ticket-history-count">共 {history.length} 张，已选 {selectedIds.length} 张</span>
           </div>
           <ul className="ticket-history-list">
-            {history.map((entry) => (
-              <li key={entry.id} className="ticket-history-item">
+            {history.map((entry, idx) => (
+              <li
+                key={entry.id}
+                className={[
+                  "ticket-history-item",
+                  dragOverIdx === idx ? "drag-over" : "",
+                ].join(" ").trim()}
+                draggable
+                onDragStart={(e) => handleDragStart(e, idx)}
+                onDragOver={(e) => handleDragOver(e, idx)}
+                onDrop={(e) => handleDrop(e, idx)}
+                onDragEnd={handleDragEnd}
+                onDragLeave={() => setDragOverIdx(null)}
+              >
+                <span className="drag-handle" title="拖拽排序">⠿</span>
                 <label className="ticket-history-checkbox">
                   <input
                     type="checkbox"

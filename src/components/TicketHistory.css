@@ -54,6 +54,25 @@
   border: 1px solid #e0e0e0;
   border-radius: 6px;
   font-size: 13px;
+  cursor: default;
+}
+
+.ticket-history-item.drag-over {
+  border-color: #2d6cdf;
+  background: #f0f5ff;
+}
+
+.drag-handle {
+  flex-shrink: 0;
+  font-size: 16px;
+  color: #bbb;
+  cursor: grab;
+  user-select: none;
+  line-height: 1;
+}
+
+.drag-handle:hover {
+  color: #888;
 }
 
 .ticket-history-checkbox {
