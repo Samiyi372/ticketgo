@@ -15,7 +15,7 @@ const NOISE_TILE_PX = 200;
 // render at z-index 0 (below text at z-index 2) so that white text remains
 // visible over a dark background image. Excluding them and redrawing afterwards
 // would place them above the text layer, making light-coloured text invisible.
-export async function captureNodeToCanvas(node, { pixelRatio, backgroundColor, fontEmbedCSS } = {}) {
+export async function captureNodeToCanvas(node, { pixelRatio, backgroundColor, fontEmbedCSS, notchColor } = {}) {
   const nodeRect = node.getBoundingClientRect();
   const textureEls = Array.from(node.querySelectorAll(TEXTURE_SELECTOR));
   const decorationEls = Array.from(node.querySelectorAll(".decoration-wrapper .decoration-img"));
@@ -47,14 +47,22 @@ export async function captureNodeToCanvas(node, { pixelRatio, backgroundColor, f
     await drawDecorationLayer(ctx, el, nodeRect, scale);
   }
 
-  // Punch transparent holes where the divider notches sit. destination-out
-  // erases the canvas pixels inside each circle, making them truly transparent
-  // in the exported PNG (instead of painting a white disc that only looks like
-  // a cutout against a white page background).
+  // Render the divider notches. For single-ticket and collage exports (no
+  // notchColor) we punch transparent holes so the collage background colour
+  // shows through — matching how a real punched hole looks against whatever
+  // surface the ticket sits on. For A4 print exports (notchColor = "#ffffff")
+  // we fill with solid white instead: the PNG may be placed on a coloured
+  // backdrop in a design tool, and the notches should always print white on
+  // the paper regardless of viewing context.
   if (notchEls.length > 0) {
     ctx.save();
-    ctx.globalCompositeOperation = "destination-out";
-    ctx.globalAlpha = 1;
+    if (notchColor) {
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = notchColor;
+    } else {
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.globalAlpha = 1;
+    }
     for (const el of notchEls) {
       const rect = el.getBoundingClientRect();
       const cx = (rect.left + rect.width / 2 - nodeRect.left) * scale;

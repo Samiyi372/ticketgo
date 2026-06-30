@@ -192,6 +192,7 @@ export default function TicketHistory({ ticket, onLoad }) {
         const dataUrl = await exportNodeToPng(node, {
           pixelRatio: EXPORT_PIXEL_RATIO,
           backgroundColor: "#ffffff",
+          notchColor: "#ffffff",
         });
         downloadDataUrl(dataUrl, `票根A4拼版_第${i + 1}页_300dpi.png`);
         // A short gap between downloads keeps browsers from treating a burst

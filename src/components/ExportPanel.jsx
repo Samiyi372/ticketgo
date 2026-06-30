@@ -64,6 +64,7 @@ export default function ExportPanel({ ticketRef, ticket }) {
       const dataUrl = await exportNodeToPng(a4Ref.current, {
         pixelRatio: EXPORT_PIXEL_RATIO,
         backgroundColor: "#ffffff",
+        notchColor: "#ffffff",
       });
       finishProgress();
       setPreview(dataUrl);
