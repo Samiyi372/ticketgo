@@ -28,6 +28,7 @@ export const defaultTicket = {
     original: cosetteDecoration,
     halftone: false,
     grayscale: true,
+    tintColor: null,
     opacity: 0.7,
     positions: {
       classic: { x: 84, y: 40, scale: 2 },

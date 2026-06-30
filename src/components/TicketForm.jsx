@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { convertToHalftone } from "../utils/halftone";
 import { convertToGrayscale } from "../utils/grayscale";
+import { tintImageDataUrl } from "../utils/tintImage";
 import { CURRENCIES } from "../utils/currency";
 import { extractPalette } from "../utils/colorPalette";
 import { extractGradientColors, randomMeshPositions } from "../utils/gradientFromImage";
@@ -84,12 +85,13 @@ export default function TicketForm({ ticket, onChange }) {
   // picking one fixed background color, but the decoration can be dragged across
   // both the stub and main areas, which often have different background colors —
   // only a live CSS blend can stay correct in both regions at once.
-  async function applyDecorationEffects(original, { grayscale, halftone }) {
+  async function applyDecorationEffects(original, { grayscale, halftone, tintColor }) {
     if (!original) return null;
     let result = original;
     try {
       if (grayscale) result = await convertToGrayscale(result);
       if (halftone) result = await convertToHalftone(result);
+      if (tintColor) result = await tintImageDataUrl(result, tintColor);
     } catch (err) {
       console.error("装饰图片处理失败，已回退到原图", err);
       return original;
@@ -197,6 +199,18 @@ export default function TicketForm({ ticket, onChange }) {
       const next = structuredClone(prev);
       next.decoration.image = null;
       next.decoration.original = null;
+      next.decoration.tintColor = null;
+      return next;
+    });
+  }
+
+  async function handleDecorationTint(color) {
+    const effects = { ...ticket.decoration, tintColor: color };
+    const image = await applyDecorationEffects(ticket.decoration.original, effects);
+    onChange((prev) => {
+      const next = structuredClone(prev);
+      next.decoration.tintColor = color;
+      next.decoration.image = image;
       return next;
     });
   }
@@ -401,6 +415,40 @@ export default function TicketForm({ ticket, onChange }) {
           />
           转换为黑白版本（与背景正片叠底）
         </label>
+        {ticket.decoration.image && (
+          <label>
+            一键变色
+            <div className="tint-row">
+              {palette.length > 0 && (
+                <>
+                  {palette.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      className={ticket.decoration.tintColor === color ? "swatch active" : "swatch"}
+                      style={{ background: color }}
+                      onClick={() => handleDecorationTint(ticket.decoration.tintColor === color ? null : color)}
+                      title={color}
+                    />
+                  ))}
+                  <span className="tint-divider" />
+                </>
+              )}
+              <input
+                type="color"
+                className="tint-color-picker"
+                value={ticket.decoration.tintColor || "#888888"}
+                onChange={(e) => handleDecorationTint(e.target.value)}
+                title="自定义颜色"
+              />
+              {ticket.decoration.tintColor && (
+                <button type="button" className="secondary" onClick={() => handleDecorationTint(null)}>
+                  清除
+                </button>
+              )}
+            </div>
+          </label>
+        )}
         {ticket.decoration.image && (
           <label>
             透明度（{Math.round(ticket.decoration.opacity * 100)}%）
