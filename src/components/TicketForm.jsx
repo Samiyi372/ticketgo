@@ -379,6 +379,89 @@ export default function TicketForm({ ticket, onChange }) {
       </fieldset>
 
       <fieldset>
+        <legend>背景图片（选填）</legend>
+        <p className="bg-section-label">主票背景图片</p>
+        <label>
+          上传图片（覆盖在背景色之上）
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleMainBgImageUpload(e.target.files[0])}
+          />
+        </label>
+        {ticket.colors.mainBgImage && (
+          <>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={ticket.colors.mainBgImageHalftone}
+                onChange={(e) => toggleMainBgImageEffect("mainBgImageHalftone", e.target.checked)}
+              />
+              转换为点阵图案（自动去除白底）
+            </label>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={ticket.colors.mainBgImageGrayscale}
+                onChange={(e) => toggleMainBgImageEffect("mainBgImageGrayscale", e.target.checked)}
+              />
+              转换为黑白版本（与背景正片叠底）
+            </label>
+            <label>
+              透明度（{Math.round(ticket.colors.mainBgImageOpacity * 100)}%）
+              <input
+                type="range"
+                min="0.05"
+                max="1"
+                step="0.05"
+                value={ticket.colors.mainBgImageOpacity}
+                onChange={(e) => set("colors.mainBgImageOpacity", Number(e.target.value))}
+              />
+            </label>
+            <button type="button" className="secondary" onClick={removeMainBgImage}>
+              移除主票背景图片
+            </button>
+          </>
+        )}
+        <p className="bg-section-label">副票背景图片</p>
+        <label>
+          上传图片（覆盖在背景色之上）
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleSubBgImageUpload(e.target.files[0])}
+          />
+        </label>
+        {ticket.colors.subBgImage && (
+          <>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={ticket.colors.subBgUseGradient}
+                onChange={(e) => set("colors.subBgUseGradient", e.target.checked)}
+              />
+              将背景图片转换为渐变色背景
+            </label>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() =>
+                onChange((prev) => {
+                  const next = structuredClone(prev);
+                  next.colors.subBgImage = null;
+                  next.colors.subBgImageColors = null;
+                  next.colors.subBgUseGradient = false;
+                  return next;
+                })
+              }
+            >
+              移除副票背景图片
+            </button>
+          </>
+        )}
+      </fieldset>
+
+      <fieldset>
         <legend>颜色</legend>
         <label>
           上传图片自动提取配色（选填）
@@ -448,83 +531,6 @@ export default function TicketForm({ ticket, onChange }) {
             )}
           </label>
         </div>
-        <label>
-          主票背景图片（选填，覆盖在背景色之上）
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleMainBgImageUpload(e.target.files[0])}
-          />
-        </label>
-        {ticket.colors.mainBgImage && (
-          <>
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={ticket.colors.mainBgImageHalftone}
-                onChange={(e) => toggleMainBgImageEffect("mainBgImageHalftone", e.target.checked)}
-              />
-              转换为点阵图案（自动去除白底）
-            </label>
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={ticket.colors.mainBgImageGrayscale}
-                onChange={(e) => toggleMainBgImageEffect("mainBgImageGrayscale", e.target.checked)}
-              />
-              转换为黑白版本（与背景正片叠底）
-            </label>
-            <label>
-              透明度（{Math.round(ticket.colors.mainBgImageOpacity * 100)}%）
-              <input
-                type="range"
-                min="0.05"
-                max="1"
-                step="0.05"
-                value={ticket.colors.mainBgImageOpacity}
-                onChange={(e) => set("colors.mainBgImageOpacity", Number(e.target.value))}
-              />
-            </label>
-            <button type="button" className="secondary" onClick={removeMainBgImage}>
-              移除主票背景图片
-            </button>
-          </>
-        )}
-        <label>
-          副票背景图片（选填，覆盖在背景色之上）
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleSubBgImageUpload(e.target.files[0])}
-          />
-        </label>
-        {ticket.colors.subBgImage && (
-          <>
-            <button
-              type="button"
-              className="secondary"
-              onClick={() =>
-                onChange((prev) => {
-                  const next = structuredClone(prev);
-                  next.colors.subBgImage = null;
-                  next.colors.subBgImageColors = null;
-                  next.colors.subBgUseGradient = false;
-                  return next;
-                })
-              }
-            >
-              移除副票背景图片
-            </button>
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={ticket.colors.subBgUseGradient}
-                onChange={(e) => set("colors.subBgUseGradient", e.target.checked)}
-              />
-              将背景图片转换为渐变色背景
-            </label>
-          </>
-        )}
         <label className="checkbox-label">
           <input
             type="checkbox"
