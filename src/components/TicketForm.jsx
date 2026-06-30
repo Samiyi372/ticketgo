@@ -54,6 +54,7 @@ export default function TicketForm({ ticket, onChange }) {
         const next = structuredClone(prev);
         next.colors.subBgImage = dataUrl;
         next.colors.subBgImageColors = colors;
+        next.colors.subBgImagePosition = { x: 50, y: 50 };
         return next;
       });
     } catch (err) {
@@ -117,6 +118,7 @@ export default function TicketForm({ ticket, onChange }) {
         next.colors.mainBgImage = image;
         next.colors.mainBgImageOriginal = original;
         next.colors.mainBgImageColors = imgColors;
+        next.colors.mainBgImagePosition = { x: 50, y: 50 };
         return next;
       });
     } catch (err) {
@@ -150,6 +152,7 @@ export default function TicketForm({ ticket, onChange }) {
       next.colors.mainBgUseGradient = false;
       next.colors.mainBgGradientType = "linear";
       next.colors.mainBgMeshPositions = null;
+      next.colors.mainBgImagePosition = { x: 50, y: 50 };
       return next;
     });
   }
@@ -546,6 +549,9 @@ export default function TicketForm({ ticket, onChange }) {
                 </label>
               </>
             )}
+            {!ticket.colors.mainBgUseGradient && (
+              <p className="hint">可在右侧预览中拖拽调整图片位置</p>
+            )}
             <button type="button" className="secondary" onClick={removeMainBgImage}>
               移除主票背景图片
             </button>
@@ -595,6 +601,9 @@ export default function TicketForm({ ticket, onChange }) {
                 )}
               </div>
             )}
+            {!ticket.colors.subBgUseGradient && (
+              <p className="hint">可在右侧预览中拖拽调整图片位置</p>
+            )}
             <button
               type="button"
               className="secondary"
@@ -606,6 +615,7 @@ export default function TicketForm({ ticket, onChange }) {
                   next.colors.subBgUseGradient = false;
                   next.colors.subBgGradientType = "linear";
                   next.colors.subBgMeshPositions = null;
+                  next.colors.subBgImagePosition = { x: 50, y: 50 };
                   return next;
                 })
               }

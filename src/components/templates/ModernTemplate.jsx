@@ -5,10 +5,11 @@ import { getCurrencySymbol } from "../../utils/currency";
 import { getTextureSrc } from "../../utils/textures";
 import { resolveDecoration, applyDecorationPositionChange } from "../../utils/decorationPosition";
 import DecorationLayer from "../DecorationLayer";
+import BgDragLayer from "../BgDragLayer";
 import { buildGradient, buildMeshGradient } from "../../utils/gradientFromImage";
 import "./ModernTemplate.css";
 
-export default function ModernTemplate({ ticket, onDecorationChange, editable, forwardedRef, printMode = false }) {
+export default function ModernTemplate({ ticket, onDecorationChange, onBgPositionChange, editable, forwardedRef, printMode = false }) {
   const { theatre, show, date, time, seat, price, rating, review, decoration, colors, showDivider, dividerColor, dividerNotches, mainLines, mainLineMode, mainLineColor, texture, template } = ticket;
   const reviewFont = isLatinOnly(review) ? "review-en" : "review-cjk";
   const hasPrice = price.amount !== "" && price.amount != null;
@@ -47,7 +48,9 @@ export default function ModernTemplate({ ticket, onDecorationChange, editable, f
                 backgroundColor: colors.subBg,
                 backgroundImage: colors.subBgImage ? `url(${colors.subBgImage})` : undefined,
                 backgroundSize: "cover",
-                backgroundPosition: "center",
+                backgroundPosition: colors.subBgImage
+                  ? `${(colors.subBgImagePosition ?? { x: 50, y: 50 }).x}% ${(colors.subBgImagePosition ?? { x: 50, y: 50 }).y}%`
+                  : "center",
               }),
           "--stub-text": colors.subTextColor,
         }}
@@ -56,6 +59,12 @@ export default function ModernTemplate({ ticket, onDecorationChange, editable, f
           <div className="paper-texture" style={{ backgroundImage: `url(${textureSrc})` }} />
         ) : (
           <div className="paper-noise" />
+        )}
+        {editable && !colors.subBgUseGradient && colors.subBgImage && (
+          <BgDragLayer
+            position={colors.subBgImagePosition ?? { x: 50, y: 50 }}
+            onChange={(pos) => onBgPositionChange?.("subBgImagePosition", pos)}
+          />
         )}
         <div className="stub-stars">
           {[1, 2, 3, 4, 5].map((n) => (
@@ -86,7 +95,14 @@ export default function ModernTemplate({ ticket, onDecorationChange, editable, f
             style={{
               opacity: colors.mainBgImageOpacity,
               mixBlendMode: colors.mainBgImageGrayscale ? "multiply" : "normal",
+              objectPosition: `${(colors.mainBgImagePosition ?? { x: 50, y: 50 }).x}% ${(colors.mainBgImagePosition ?? { x: 50, y: 50 }).y}%`,
             }}
+          />
+        )}
+        {editable && !colors.mainBgUseGradient && colors.mainBgImage && (
+          <BgDragLayer
+            position={colors.mainBgImagePosition ?? { x: 50, y: 50 }}
+            onChange={(pos) => onBgPositionChange?.("mainBgImagePosition", pos)}
           />
         )}
         {textureSrc ? (

@@ -19,6 +19,13 @@ function App() {
     setTicket((prev) => ({ ...prev, decoration }));
   }
 
+  function handleBgPositionChange(field, position) {
+    setTicket((prev) => ({
+      ...prev,
+      colors: { ...prev.colors, [field]: position },
+    }));
+  }
+
   return (
     <div className="app-layout">
       <aside className="app-form-panel">
@@ -39,6 +46,7 @@ function App() {
         <TicketPreview
           ticket={ticket}
           onDecorationChange={handleDecorationChange}
+          onBgPositionChange={handleBgPositionChange}
           ticketRef={ticketRef}
         />
         <ExportPanel ticketRef={ticketRef} ticket={ticket} />

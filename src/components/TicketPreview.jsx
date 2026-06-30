@@ -6,7 +6,7 @@ import "./TicketPreview.css";
 // and scales it down visually with a CSS transform so it fits the available
 // preview width. The underlying DOM node keeps its real mm dimensions, so
 // `ticketRef` can be handed straight to the PNG exporter unchanged.
-export default function TicketPreview({ ticket, onDecorationChange, ticketRef }) {
+export default function TicketPreview({ ticket, onDecorationChange, onBgPositionChange, ticketRef }) {
   const Template = getTemplateComponent(ticket.template);
   const wrapperRef = useRef(null);
   const innerRef = useRef(null);
@@ -44,6 +44,7 @@ export default function TicketPreview({ ticket, onDecorationChange, ticketRef })
           <Template
             ticket={ticket}
             onDecorationChange={onDecorationChange}
+            onBgPositionChange={onBgPositionChange}
             editable
             forwardedRef={ticketRef}
           />

@@ -1,0 +1,12 @@
+.bg-drag-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.bg-drag-layer:active {
+  cursor: grabbing;
+}
