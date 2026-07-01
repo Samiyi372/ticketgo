@@ -454,7 +454,7 @@ export default function TicketForm({ ticket, onChange }) {
         )}
         {ticket.decoration.image && (
           <label>
-            透明度（{Math.round(ticket.decoration.opacity * 100)}%）
+            不透明度（{Math.round(ticket.decoration.opacity * 100)}%）
             <input
               type="range"
               min="0.1"
