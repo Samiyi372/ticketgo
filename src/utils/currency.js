@@ -6,6 +6,7 @@ export const CURRENCIES = [
   { code: "JPY", label: "日元", symbol: "¥" },
   { code: "KRW", label: "韩元", symbol: "₩" },
   { code: "HKD", label: "港币", symbol: "HK$" },
+  { code: "SGD", label: "新加坡元", symbol: "S$" },
   { code: "RUB", label: "俄罗斯卢布", symbol: "₽" },
 ];
 
