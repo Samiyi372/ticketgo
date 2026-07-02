@@ -214,6 +214,13 @@
   white-space: nowrap;
 }
 
+/* Cutive Mono lacks ₩ and ₽, causing heavy system-font fallback rendering.
+   DM Mono (already loaded) covers all currency symbols at consistent weight. */
+.price-symbol {
+  font-family: "DM Mono", monospace;
+  font-weight: 300;
+}
+
 .seat-col {
   display: flex;
   flex-direction: column;
