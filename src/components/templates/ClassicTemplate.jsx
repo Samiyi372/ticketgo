@@ -162,7 +162,10 @@ export default function ClassicTemplate({ ticket, onDecorationChange, onBgPositi
             </div>
             {hasPrice && (
               <p className="ticket-price">
-                <span className="price-symbol">{getCurrencySymbol(price.currency)}</span>{price.amount}
+                {["KRW", "RUB"].includes(price.currency)
+                  ? <span className="price-symbol">{getCurrencySymbol(price.currency)}</span>
+                  : getCurrencySymbol(price.currency)}
+                {price.amount}
               </p>
             )}
           </div>
