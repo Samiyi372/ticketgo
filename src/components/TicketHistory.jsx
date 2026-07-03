@@ -75,6 +75,7 @@ export default function TicketHistory({ ticket, onLoad }) {
   const pageRefs = useRef(new Map());
   const stackCanvasRef = useRef(null);
   const stackOutputRef = useRef(null);
+  const stackExportApiRef = useRef(null);
   const stackBgImageInputRef = useRef(null);
   const bgImageInputRef = useRef(null);
   const archiveInputRef = useRef(null);
@@ -267,23 +268,19 @@ export default function TicketHistory({ ticket, onLoad }) {
   }
 
   async function handleStackExport() {
-    const node = stackOutputRef.current;
-    if (!node || !stackView) return;
+    if (!stackView || !stackExportApiRef.current) return;
     setBusy(true);
     startProgress();
     try {
-      // Capture ts-output-canvas directly: it already has the correct background
-      // colour/image, aspect ratio, and all visual transforms applied. This avoids
-      // the coordinate mismatch that arose from trying to capture the inner ts-canvas
-      // (which has a display-fit transform) and composite it separately.
-      // Scale pixelRatio so the output matches the chosen export dimensions.
-      // Clamped on mobile: an oversized canvas (the 3840×2160 presets are
-      // real 4K) silently renders blank on mobile Safari instead of erroring,
-      // so the "downloaded" image comes out empty — desktop is unaffected.
+      // Composited directly in canvas (see TicketStack's exportApiRef
+      // builder) instead of capturing the live DOM with html-to-image: a
+      // stack with several cards produces an SVG data URI too large for
+      // mobile browsers to reliably rasterise, which came back as a blank
+      // PNG with no error. Clamped on mobile regardless, since the doubled
+      // 4K-ish presets (e.g. 3840x2160) are still a lot of canvas to paint.
       const requested = getExportDims(stackView.ratio ?? "3:2", stackView.customW, stackView.customH, stackView.orientation ?? "landscape");
       const { w: ew, h: eh } = clampExportDimsForDevice(requested.w, requested.h);
-      const pixelRatio = Math.max(1, ew / node.offsetWidth);
-      const dataUrl = await exportNodeToPng(node, { pixelRatio });
+      const dataUrl = await stackExportApiRef.current(ew, eh);
       finishProgress();
       const ratioLabel = (stackView.ratio ?? "3:2").replace(":", "x");
       downloadDataUrl(dataUrl, `票根堆叠_${selectedEntries.length}张_${ratioLabel}.png`);
@@ -513,6 +510,7 @@ export default function TicketHistory({ ticket, onLoad }) {
                 onViewportChange={setStackViewport}
                 canvasRef={stackCanvasRef}
                 outputCanvasRef={stackOutputRef}
+                exportApiRef={stackExportApiRef}
               />
             </div>
 

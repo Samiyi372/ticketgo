@@ -58,6 +58,15 @@ function shadow(depth) {
   return `${offsetX}px ${offsetY}px ${blur}px rgba(0,0,0,${opacity.toFixed(2)})`;
 }
 
+function loadImageEl(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
 // ─── Fan layout ───────────────────────────────────────────────────────────────
 const FAN_W_BASE   = 1060;
 const FAN_H_BASE   = 560;
@@ -96,14 +105,18 @@ export const FAN_ANCHORS = [
 ];
 export const DEFAULT_FAN_ANCHOR = "bottom";
 
-// transformOrigin for .ts-item, and the card's own left/top given where the
-// shared pivot (px, py) should land — kept in one table so each anchor's
-// "which point of the card sits at the pivot" logic only lives in one place.
+// transformOrigin for .ts-item, the card's own left/top given where the
+// shared pivot (px, py) should land, and that same anchor point expressed
+// in the card's own LOCAL coordinates (0,0 = the card's own top-left) — the
+// first two drive the live CSS render, the last is reused by the manual
+// canvas export compositor (which needs to rotate each card image around
+// the same point CSS would, without relying on transform-origin at all).
+// Kept in one table so each anchor's geometry only lives in one place.
 const FAN_ANCHOR_GEOMETRY = {
-  bottom: { origin: "bottom center", place: (px, py) => [px - CARD_W / 2, py - CARD_H] },
-  left:   { origin: "left center",   place: (px, py) => [px, py - CARD_H / 2] },
-  right:  { origin: "right center",  place: (px, py) => [px - CARD_W, py - CARD_H / 2] },
-  top:    { origin: "top center",    place: (px, py) => [px - CARD_W / 2, py] },
+  bottom: { origin: "bottom center", place: (px, py) => [px - CARD_W / 2, py - CARD_H], pivot: [CARD_W / 2, CARD_H] },
+  left:   { origin: "left center",   place: (px, py) => [px, py - CARD_H / 2],          pivot: [0, CARD_H / 2] },
+  right:  { origin: "right center",  place: (px, py) => [px - CARD_W, py - CARD_H / 2], pivot: [CARD_W, CARD_H / 2] },
+  top:    { origin: "top center",    place: (px, py) => [px - CARD_W / 2, py],          pivot: [CARD_W / 2, 0] },
 };
 
 function fanLayout(n, seed, validate, spreadDeg = DEFAULT_FAN_SPREAD_DEG, pivot = DEFAULT_FAN_PIVOT, anchor = DEFAULT_FAN_ANCHOR) {
@@ -304,6 +317,11 @@ export default function TicketStack({
   radialParams,
   canvasRef,
   outputCanvasRef,
+  // Populated (as a plain function, not a React ref-forwarding target) with
+  // an async (targetW, targetH) => dataUrl exporter. See the comment above
+  // renderExportCanvas for why the export goes through this instead of
+  // capturing the live DOM.
+  exportApiRef,
 }) {
   const outputRef  = useRef(null);
   const canvasElRef = useRef(null);
@@ -541,6 +559,97 @@ export default function TicketStack({
     const minOverall = validate ? 0.80 : 0.30;
     return repairLayout(rawLayout, CARD_W, CARD_H, designW, designH, exportW, exportH, { minPerCard, minOverall });
   }, [rawLayout, validate, designW, designH, exportW, exportH, n, mode, pivotDragging]);
+
+  // ── Manual canvas export ─────────────────────────────────────────────────────
+  // The obvious way to export the stack is to hand .ts-output-canvas to
+  // html-to-image, same as every other export in this app. That works on
+  // desktop, but on mobile (consistently across engines, not one browser's
+  // quirk) it comes back blank: html-to-image serialises the whole canvas —
+  // background plus every already-baked per-card <img> — into one big SVG
+  // data URI and rasterises THAT via an <img>, and a stack with several
+  // cards pushes that combined payload well past what mobile browsers will
+  // reliably decode; past that point they fail silently (no error, no
+  // exception — the image element just "loads" empty) rather than throwing.
+  //
+  // Since every card is already a flat, correctly-notched/textured PNG
+  // (cardImages, baked per-card via the same reliable single-ticket export
+  // path), the whole stack can be composited with plain Canvas2D drawImage
+  // calls instead — the same technique collage.js already uses, with none
+  // of html-to-image's SVG-rasterisation ceiling. Drawing cards in ascending
+  // z-order also makes inter-card notch occlusion automatic: a lower card's
+  // punched-out hole reveals whatever was already drawn (background or a
+  // still-lower card), and gets correctly painted over once a higher,
+  // overlapping card is drawn on top of it — no separate polygon math needed.
+  useEffect(() => {
+    if (!exportApiRef) return;
+    exportApiRef.current = async (targetW, targetH) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext("2d");
+
+      if (bgImage) {
+        const img = await loadImageEl(bgImage);
+        const s = Math.max(targetW / img.width, targetH / img.height);
+        const dw = img.width * s, dh = img.height * s;
+        ctx.drawImage(img, (targetW - dw) / 2, (targetH - dh) / 2, dw, dh);
+      } else {
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, targetW, targetH);
+      }
+
+      // Design canvas -> output canvas contain-fit, recomputed at the full
+      // export resolution (mirrors fitScale/ox/oy below, which are sized
+      // for the on-screen display instead).
+      const fit  = Math.min(targetW / designW, targetH / designH);
+      const fitOx = (targetW - designW * fit) / 2;
+      const fitOy = (targetH - designH * fit) / 2;
+
+      // Viewport pan/zoom, replicated: .ts-viewport's transform-origin is
+      // the centre of the full output box, and viewport.x/y are fractions
+      // of that box's own size (see the pan handlers above), so they scale
+      // correctly here even though targetW/targetH differ from the on-screen
+      // displaySize they were captured relative to.
+      const cx = targetW / 2, cy = targetH / 2;
+      const vx = viewport.x * targetW, vy = viewport.y * targetH;
+      const vz = viewport.zoom;
+
+      const localPivot = mode === "fan"
+        ? (FAN_ANCHOR_GEOMETRY[fanAnchor] ?? FAN_ANCHOR_GEOMETRY.bottom).pivot
+        : FAN_ANCHOR_GEOMETRY.bottom.pivot;
+
+      const items = tickets
+        .map((entry, i) => ({ entry, i, ...layout[i] }))
+        .sort((a, b) => a.zIndex - b.zIndex);
+
+      for (const { entry, i, left, top, angle, depth } of items) {
+        const key = entry.id ?? i;
+        const src = cardImages[key];
+        if (!src) continue;
+        const img = await loadImageEl(src);
+
+        const pivotDesignX = left + localPivot[0];
+        const pivotDesignY = top + localPivot[1];
+        const fitX = fitOx + pivotDesignX * fit;
+        const fitY = fitOy + pivotDesignY * fit;
+        const outX = cx + (fitX - cx) * vz + vx;
+        const outY = cy + (fitY - cy) * vz + vy;
+        const scale = fit * vz * cardScale;
+
+        ctx.save();
+        ctx.translate(outX, outY);
+        ctx.rotate((angle * Math.PI) / 180);
+        ctx.shadowColor = `rgba(0, 0, 0, ${(0.12 + depth * 0.23).toFixed(2)})`;
+        ctx.shadowBlur = (6 + depth * 22) * scale;
+        ctx.shadowOffsetX = (3 + depth * 7) * scale;
+        ctx.shadowOffsetY = (4 + depth * 11) * scale;
+        ctx.drawImage(img, -localPivot[0] * scale, -localPivot[1] * scale, CARD_W * scale, CARD_H * scale);
+        ctx.restore();
+      }
+
+      return canvas.toDataURL("image/png");
+    };
+  });
 
   // ── Responsive fit ───────────────────────────────────────────────────────────
   useEffect(() => {
