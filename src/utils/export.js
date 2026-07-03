@@ -26,7 +26,24 @@ function dataUrlToFile(dataUrl, filename) {
 // roundabout way to do the same anchor download. Restrict the share-sheet
 // path to mobile, where it's the only way to get an image into the system
 // photo library at all.
-const IS_MOBILE = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+export const IS_MOBILE = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+// Mobile Safari (and some Android WebViews) silently render an oversized
+// canvas as blank instead of erroring — there's no exception to catch, the
+// resulting PNG just comes out empty. The threshold varies by device
+// memory, but ~3000px on the longer side is comfortably inside what even
+// older/lower-RAM phones handle reliably. Desktop has no such limit here,
+// so full-resolution exports (e.g. the 3840×2160 stack presets) stay
+// untouched there.
+const MOBILE_MAX_EXPORT_DIM = 3000;
+
+export function clampExportDimsForDevice(w, h) {
+  if (!IS_MOBILE) return { w, h };
+  const maxDim = Math.max(w, h);
+  if (maxDim <= MOBILE_MAX_EXPORT_DIM) return { w, h };
+  const scale = MOBILE_MAX_EXPORT_DIM / maxDim;
+  return { w: Math.round(w * scale), h: Math.round(h * scale) };
+}
 
 // Mobile browsers (iOS Safari, Android Chrome, ...) can share a file straight
 // into the OS share sheet, which has a built-in "Save Image" / "存储图像" /

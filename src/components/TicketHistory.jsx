@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import JSZip from "jszip";
 import { loadHistory, addToHistory, removeFromHistory, importEntries, saveHistoryOrder, loadHistoryOrder } from "../utils/history";
-import { exportNodeToPng, downloadDataUrl } from "../utils/export";
+import { exportNodeToPng, downloadDataUrl, clampExportDimsForDevice } from "../utils/export";
 import { exportCollage } from "../utils/collage";
 import { EXPORT_PIXEL_RATIO } from "../utils/dimensions";
 import { getTemplateComponent } from "./templates";
@@ -277,7 +277,11 @@ export default function TicketHistory({ ticket, onLoad }) {
       // the coordinate mismatch that arose from trying to capture the inner ts-canvas
       // (which has a display-fit transform) and composite it separately.
       // Scale pixelRatio so the output matches the chosen export dimensions.
-      const { w: ew, h: eh } = getExportDims(stackView.ratio ?? "3:2", stackView.customW, stackView.customH, stackView.orientation ?? "landscape");
+      // Clamped on mobile: an oversized canvas (the 3840×2160 presets are
+      // real 4K) silently renders blank on mobile Safari instead of erroring,
+      // so the "downloaded" image comes out empty — desktop is unaffected.
+      const requested = getExportDims(stackView.ratio ?? "3:2", stackView.customW, stackView.customH, stackView.orientation ?? "landscape");
+      const { w: ew, h: eh } = clampExportDimsForDevice(requested.w, requested.h);
       const pixelRatio = Math.max(1, ew / node.offsetWidth);
       const dataUrl = await exportNodeToPng(node, { pixelRatio });
       finishProgress();
