@@ -95,6 +95,31 @@
   grid-template-columns: 2fr 1fr;
 }
 
+.field-label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rating-toggle-btn {
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid #ccc;
+  background: #f3f3f3;
+  color: #777;
+  cursor: pointer;
+}
+
+.rating-toggle-btn.active {
+  border-color: #2d6cdf;
+  color: #2d6cdf;
+  background: #eef4ff;
+  font-weight: 600;
+}
+
 .star-input {
   display: flex;
   gap: 4px;

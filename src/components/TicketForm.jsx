@@ -365,7 +365,16 @@ export default function TicketForm({ ticket, onChange }) {
       <fieldset>
         <legend>观后感</legend>
         <label>
-          打分
+          <span className="field-label-row">
+            打分
+            <button
+              type="button"
+              className={`rating-toggle-btn${(ticket.showRating ?? true) ? " active" : ""}`}
+              onClick={() => set("showRating", !(ticket.showRating ?? true))}
+            >
+              {(ticket.showRating ?? true) ? "显示" : "不显示"}
+            </button>
+          </span>
           <div className="star-input">
             {[1, 2, 3, 4, 5].map((n) => (
               <button

@@ -22,6 +22,7 @@ export const defaultTicket = {
     currency: "GBP",
   },
   rating: 4,
+  showRating: true,
   review: "只要二十块的大悲站票我高低得体验下！唱得真好啊大热天的看得我一直在起鸡皮疙瘩...",
   decoration: {
     image: cosetteDecoration,

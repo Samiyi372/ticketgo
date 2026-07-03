@@ -1,0 +1,50 @@
+.ts-output-canvas {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  /* aspect-ratio set inline to match chosen ratio */
+}
+
+.ts-canvas {
+  position: absolute;
+  /* width, height, transform set inline */
+  transform-origin: top left;
+}
+
+.ts-viewport {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+  /* transform set inline */
+}
+
+.ts-viewport--dragging {
+  cursor: grabbing;
+}
+
+.ts-item {
+  position: absolute;
+  /* overflow and box-shadow live on the inner scale div so they scale with the card */
+}
+
+/* Draggable handle marking the fan mode's rotation pivot — every card's
+   anchor point (bottom-centre or left-centre, per fanAnchor) sits here.
+   Sized in design-canvas px like the cards, but counter-scaled inline so it
+   stays a constant, clickable size regardless of zoom. */
+.ts-fan-pivot {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  margin-left: -11px;
+  margin-top: -11px;
+  border-radius: 50%;
+  background: rgba(45, 108, 223, 0.85);
+  border: 2px solid #fff;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+  cursor: grab;
+  touch-action: none;
+}
+
+.ts-fan-pivot:active {
+  cursor: grabbing;
+}

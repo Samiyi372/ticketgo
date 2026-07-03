@@ -6,7 +6,42 @@ import { exportCollage } from "../utils/collage";
 import { EXPORT_PIXEL_RATIO } from "../utils/dimensions";
 import { getTemplateComponent } from "./templates";
 import A4CollageSheet, { A4_COLLAGE_MAX_PER_PAGE } from "./A4CollageSheet";
+import TicketStack, { RATIO_PRESETS, getExportDims, FAN_SPREAD_MIN, FAN_SPREAD_MAX, DEFAULT_FAN_SPREAD_DEG, DEFAULT_FAN_PIVOT, FAN_ANCHORS, DEFAULT_FAN_ANCHOR } from "./TicketStack";
 import "./TicketHistory.css";
+
+function loadImg(src) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = rej;
+    img.src = src;
+  });
+}
+
+async function compositeToRatio(designDataUrl, exportW, exportH, bgColor = "#ffffff", bgImage = null) {
+  const [img, bgImg] = await Promise.all([
+    loadImg(designDataUrl),
+    bgImage ? loadImg(bgImage) : Promise.resolve(null),
+  ]);
+  const cvs = document.createElement("canvas");
+  cvs.width  = exportW;
+  cvs.height = exportH;
+  const ctx = cvs.getContext("2d");
+  // Background colour
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, exportW, exportH);
+  // Background image (cover)
+  if (bgImg) {
+    const s  = Math.max(exportW / bgImg.width, exportH / bgImg.height);
+    const dw = bgImg.width * s, dh = bgImg.height * s;
+    ctx.drawImage(bgImg, (exportW - dw) / 2, (exportH - dh) / 2, dw, dh);
+  }
+  // Design canvas (contain)
+  const s  = Math.min(exportW / img.width, exportH / img.height);
+  const dw = img.width * s, dh = img.height * s;
+  ctx.drawImage(img, (exportW - dw) / 2, (exportH - dh) / 2, dw, dh);
+  return cvs.toDataURL("image/png");
+}
 
 function chunk(items, size) {
   const chunks = [];
@@ -27,8 +62,20 @@ export default function TicketHistory({ ticket, onLoad }) {
   const [collageBgImage, setCollageBgImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [importResult, setImportResult] = useState(null);
+  // { mode, seed, validate, ratio, customW, customH, orientation } | null
+  const [stackView, setStackView] = useState(null);
+  const [stackBg, setStackBg] = useState("#ffffff");
+  const [stackBgImage, setStackBgImage] = useState(null);
+  const [stackCardScale, setStackCardScale] = useState(1);
+  const [stackFanSpread, setStackFanSpread] = useState(DEFAULT_FAN_SPREAD_DEG);
+  const [stackFanPivot, setStackFanPivot] = useState(DEFAULT_FAN_PIVOT);
+  const [stackFanAnchor, setStackFanAnchor] = useState(DEFAULT_FAN_ANCHOR);
+  const [stackViewport, setStackViewport] = useState({ x: 0, y: 0, zoom: 1 });
   const nodeRefs = useRef(new Map());
   const pageRefs = useRef(new Map());
+  const stackCanvasRef = useRef(null);
+  const stackOutputRef = useRef(null);
+  const stackBgImageInputRef = useRef(null);
   const bgImageInputRef = useRef(null);
   const archiveInputRef = useRef(null);
 
@@ -219,6 +266,32 @@ export default function TicketHistory({ ticket, onLoad }) {
     }
   }
 
+  async function handleStackExport() {
+    const node = stackOutputRef.current;
+    if (!node || !stackView) return;
+    setBusy(true);
+    startProgress();
+    try {
+      // Capture ts-output-canvas directly: it already has the correct background
+      // colour/image, aspect ratio, and all visual transforms applied. This avoids
+      // the coordinate mismatch that arose from trying to capture the inner ts-canvas
+      // (which has a display-fit transform) and composite it separately.
+      // Scale pixelRatio so the output matches the chosen export dimensions.
+      const { w: ew, h: eh } = getExportDims(stackView.ratio ?? "3:2", stackView.customW, stackView.customH, stackView.orientation ?? "landscape");
+      const pixelRatio = Math.max(1, ew / node.offsetWidth);
+      const dataUrl = await exportNodeToPng(node, { pixelRatio });
+      finishProgress();
+      const ratioLabel = (stackView.ratio ?? "3:2").replace(":", "x");
+      downloadDataUrl(dataUrl, `票根堆叠_${selectedEntries.length}张_${ratioLabel}.png`);
+    } catch (err) {
+      console.error(err);
+      setError("导出失败，请重试");
+      finishProgress();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const selectedEntries = history.filter((entry) => selectedIds.includes(entry.id));
   const collagePages = chunk(selectedEntries.map((entry) => entry.ticket), A4_COLLAGE_MAX_PER_PAGE);
 
@@ -338,6 +411,14 @@ export default function TicketHistory({ ticket, onLoad }) {
               ? "正在生成…"
               : `导出 A4 拼版（每页最多 ${A4_COLLAGE_MAX_PER_PAGE} 张，共 ${collagePages.length} 页）`}
           </button>
+          <button
+            type="button"
+            className="export-btn secondary"
+            onClick={() => setStackView({ mode: "fan", seed: Date.now() % 99991, validate: false, ratio: "3:2", customW: 1620, customH: 1080, orientation: "landscape" })}
+            disabled={busy || selectedIds.length < 2}
+          >
+            随机堆叠预览（已选 {selectedIds.length} 张）
+          </button>
         </>
       )}
 
@@ -402,6 +483,257 @@ export default function TicketHistory({ ticket, onLoad }) {
           );
         })}
       </div>
+
+      {stackView && (
+        <div className="stack-overlay" onClick={() => setStackView(null)}>
+          <div className="stack-layout" onClick={(e) => e.stopPropagation()}>
+          <div className="stack-dialog">
+            {/* Row 1: mode + shuffle + export + close */}
+            <div className="stack-toolbar">
+              <div className="stack-mode-toggle">
+                {[
+                  { key: "fan",     label: "扇形" },
+                  { key: "radial",  label: "辐射" },
+                  { key: "scatter", label: "散落" },
+                  { key: "cascade", label: "层叠" },
+                ].map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={stackView.mode === key ? "export-btn" : "export-btn secondary"}
+                    onClick={() => setStackView((v) => ({ ...v, mode: key }))}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="export-btn secondary"
+                onClick={() => setStackView((v) => ({ ...v, seed: Date.now() % 99991 }))}
+              >
+                换一个排法
+              </button>
+              <button
+                type="button"
+                className="export-btn"
+                onClick={handleStackExport}
+                disabled={busy}
+              >
+                {busy ? "导出中…" : "导出 PNG"}
+              </button>
+              <button type="button" className="export-btn secondary" onClick={() => setStackView(null)}>
+                关闭
+              </button>
+            </div>
+
+            {/* Row 2: ratio picker */}
+            <div className="stack-ratio-row">
+              <span className="stack-ratio-label">画布比例</span>
+              <div className="stack-ratio-picker">
+
+                {RATIO_PRESETS.map((p) => (
+                  <button
+                    key={p.key}
+                    type="button"
+                    title={p.hint}
+                    className={(stackView.ratio ?? "3:2") === p.key ? "export-btn" : "export-btn secondary"}
+                    onClick={() => setStackView((v) => ({ ...v, ratio: p.key }))}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className={(stackView.ratio ?? "") === "custom" ? "export-btn" : "export-btn secondary"}
+                  onClick={() => setStackView((v) => ({ ...v, ratio: "custom" }))}
+                >
+                  自定义
+                </button>
+              </div>
+              {/* Orientation toggle — hidden for square and custom ratios */}
+              {(stackView.ratio ?? "3:2") !== "1:1" && (stackView.ratio ?? "3:2") !== "custom" && (
+                <div className="stack-orientation-toggle">
+                  {[
+                    { key: "landscape", label: "横屏" },
+                    { key: "portrait",  label: "竖屏" },
+                  ].map(({ key, label }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={(stackView.orientation ?? "landscape") === key ? "export-btn" : "export-btn secondary"}
+                      onClick={() => setStackView((v) => ({ ...v, orientation: key }))}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {(stackView.ratio ?? "") === "custom" && (
+                <div className="stack-ratio-custom">
+                  <input
+                    type="number"
+                    min="100" max="8000" step="1"
+                    value={stackView.customW ?? 1080}
+                    onChange={(e) => setStackView((v) => ({ ...v, customW: Number(e.target.value) }))}
+                  />
+                  <span>×</span>
+                  <input
+                    type="number"
+                    min="100" max="8000" step="1"
+                    value={stackView.customH ?? 1080}
+                    onChange={(e) => setStackView((v) => ({ ...v, customH: Number(e.target.value) }))}
+                  />
+                  <span className="stack-ratio-unit">px</span>
+                </div>
+              )}
+            </div>
+
+            {/* Row 3: card scale */}
+            <div className="stack-scale-row">
+              <span className="stack-ratio-label">票根大小</span>
+              <input
+                type="range"
+                min="0.4"
+                max="1.8"
+                step="0.05"
+                value={stackCardScale}
+                onChange={(e) => setStackCardScale(Number(e.target.value))}
+                className="stack-scale-slider"
+              />
+              <span className="stack-scale-value">{Math.round(stackCardScale * 100)}%</span>
+            </div>
+
+            {/* Row 3b: fan spread — only meaningful in fan mode */}
+            {stackView.mode === "fan" && (
+              <div className="stack-scale-row">
+                <span className="stack-ratio-label">扇形角度</span>
+                <input
+                  type="range"
+                  min={FAN_SPREAD_MIN}
+                  max={FAN_SPREAD_MAX}
+                  step="1"
+                  value={stackFanSpread}
+                  onChange={(e) => setStackFanSpread(Number(e.target.value))}
+                  className="stack-scale-slider"
+                />
+                <span className="stack-scale-value">{stackFanSpread}°</span>
+              </div>
+            )}
+
+            {/* Row 3c: fan rotation anchor — only meaningful in fan mode */}
+            {stackView.mode === "fan" && (
+              <div className="stack-mode-toggle">
+                {FAN_ANCHORS.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={stackFanAnchor === key ? "export-btn" : "export-btn secondary"}
+                    onClick={() => setStackFanAnchor(key)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Row 4: background */}
+            <div className="stack-bg-row">
+              <span className="stack-ratio-label">背景</span>
+              <label className="stack-bg-color">
+                <input
+                  type="color"
+                  value={stackBg}
+                  onChange={(e) => setStackBg(e.target.value)}
+                />
+                <span>背景色</span>
+              </label>
+              <input
+                ref={stackBgImageInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = () => setStackBgImage(reader.result);
+                  reader.readAsDataURL(file);
+                  e.target.value = "";
+                }}
+              />
+              {stackBgImage ? (
+                <>
+                  <img src={stackBgImage} alt="" className="collage-bg-thumb" />
+                  <button
+                    type="button"
+                    className="export-btn secondary"
+                    onClick={() => setStackBgImage(null)}
+                  >
+                    移除背景图
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="export-btn secondary"
+                  onClick={() => stackBgImageInputRef.current?.click()}
+                >
+                  上传背景图
+                </button>
+              )}
+            </div>
+
+            <div className="stack-preview-area">
+              <TicketStack
+                entries={selectedEntries}
+                mode={stackView.mode}
+                seed={stackView.seed}
+                validate={stackView.mode === "fan" || stackView.mode === "cascade"}
+                canvasRatio={stackView.ratio ?? "3:2"}
+                customW={stackView.customW}
+                customH={stackView.customH}
+                orientation={stackView.orientation ?? "landscape"}
+                bgColor={stackBg}
+                bgImage={stackBgImage}
+                cardScale={stackCardScale}
+                fanSpreadDeg={stackFanSpread}
+                fanPivot={stackFanPivot}
+                onFanPivotChange={setStackFanPivot}
+                fanAnchor={stackFanAnchor}
+                viewport={stackViewport}
+                onViewportChange={setStackViewport}
+                canvasRef={stackCanvasRef}
+                outputCanvasRef={stackOutputRef}
+              />
+            </div>
+          </div>
+
+          {/* Right: read-only mirror preview */}
+          <div className="stack-side-preview">
+            <TicketStack
+              entries={selectedEntries}
+              mode={stackView.mode}
+              seed={stackView.seed}
+              validate={stackView.mode === "fan" || stackView.mode === "cascade"}
+              canvasRatio={stackView.ratio ?? "3:2"}
+              customW={stackView.customW}
+              customH={stackView.customH}
+              orientation={stackView.orientation ?? "landscape"}
+              bgColor={stackBg}
+              bgImage={stackBgImage}
+              cardScale={stackCardScale}
+              fanSpreadDeg={stackFanSpread}
+              fanPivot={stackFanPivot}
+              fanAnchor={stackFanAnchor}
+              viewport={stackViewport}
+              interactive={false}
+            />
+          </div>
+
+          </div>
+        </div>
+      )}
 
       {progress !== null && (
         <div className="loading-overlay">

@@ -4,13 +4,14 @@ import { TICKET_WIDTH_MM, TICKET_HEIGHT_MM } from "../../utils/dimensions";
 import { getCurrencySymbol } from "../../utils/currency";
 import { getTextureSrc } from "../../utils/textures";
 import { resolveDecoration, applyDecorationPositionChange } from "../../utils/decorationPosition";
+import { getNotchClipPath } from "../../utils/notchClipPath";
 import DecorationLayer from "../DecorationLayer";
 import BgDragLayer from "../BgDragLayer";
 import { buildGradient, buildMeshGradient } from "../../utils/gradientFromImage";
 import "./ModernTemplate.css";
 
 export default function ModernTemplate({ ticket, onDecorationChange, onBgPositionChange, editable, forwardedRef, printMode = false }) {
-  const { theatre, show, date, time, seat, price, rating, review, decoration, colors, showDivider, dividerColor, dividerNotches, mainLines, mainLineMode, mainLineColor, texture, template } = ticket;
+  const { theatre, show, date, time, seat, price, rating, showRating = true, review, decoration, colors, showDivider, dividerColor, dividerNotches, mainLines, mainLineMode, mainLineColor, texture, template } = ticket;
   const reviewFont = isLatinOnly(review) ? "review-en" : "review-cjk";
   const hasPrice = price.amount !== "" && price.amount != null;
   const textureSrc = getTextureSrc(texture);
@@ -37,6 +38,7 @@ export default function ModernTemplate({ ticket, onDecorationChange, onBgPositio
         width: `${TICKET_WIDTH_MM}mm`,
         height: `${TICKET_HEIGHT_MM}mm`,
         boxShadow: printMode ? "none" : undefined,
+        clipPath: dividerNotches ? getNotchClipPath(false) : undefined,
       }}
     >
       <div
@@ -66,7 +68,10 @@ export default function ModernTemplate({ ticket, onDecorationChange, onBgPositio
             onChange={(pos) => onBgPositionChange?.("subBgImagePosition", pos)}
           />
         )}
-        <div className="stub-stars">
+        {/* Kept in the flex flow (just hidden) rather than unmounted, so
+            hiding the rating doesn't shift stub-bottom/review upward to
+            fill the gap left by justify-content: space-between. */}
+        <div className="stub-stars" style={showRating ? undefined : { visibility: "hidden" }}>
           {[1, 2, 3, 4, 5].map((n) => (
             <span key={n} className={n <= rating ? "stub-star filled" : "stub-star"}>
               ★
