@@ -344,7 +344,20 @@ export default function TicketStack({
     setViewport(v => {
       const newZoom = Math.max(0.15, Math.min(10, v.zoom * factor));
       const r = newZoom / v.zoom;
-      return { x: cx + (v.x - cx) * r, y: cy + (v.y - cy) * r, zoom: newZoom };
+      // viewport.x/y are stored as fractions of the canvas's own pixel size
+      // (not raw px) specifically so the read-only mirror preview — which
+      // renders the same viewport state at a different absolute size —
+      // reproduces the identical proportional view instead of applying the
+      // same pixel offset and ending up visibly shifted from the real
+      // (interactive) canvas and the actual export.
+      const vxPx = v.x * displaySize.w, vyPx = v.y * displaySize.h;
+      const newXPx = cx + (vxPx - cx) * r;
+      const newYPx = cy + (vyPx - cy) * r;
+      return {
+        x: displaySize.w > 0 ? newXPx / displaySize.w : v.x,
+        y: displaySize.h > 0 ? newYPx / displaySize.h : v.y,
+        zoom: newZoom,
+      };
     });
   };
   useEffect(() => {
@@ -363,15 +376,22 @@ export default function TicketStack({
     if (e.touches.length === 1 && dragRef.current) {
       const dx = e.touches[0].clientX - dragRef.current.startMX;
       const dy = e.touches[0].clientY - dragRef.current.startMY;
-      setViewport(v => ({ ...v, x: dragRef.current.startVX + dx, y: dragRef.current.startVY + dy }));
+      setViewport(v => ({
+        ...v,
+        x: displaySize.w > 0 ? (dragRef.current.startVXpx + dx) / displaySize.w : v.x,
+        y: displaySize.h > 0 ? (dragRef.current.startVYpx + dy) / displaySize.h : v.y,
+      }));
     } else if (e.touches.length === 2 && touchRef.current) {
       const t1 = e.touches[0], t2 = e.touches[1];
       const newDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-      const { dist, midX, midY, startVX, startVY, startZoom } = touchRef.current;
+      const { dist, midX, midY, startVXpx, startVYpx, startZoom } = touchRef.current;
       const newZoom = Math.max(0.15, Math.min(10, startZoom * (newDist / dist)));
+      const r = newZoom / startZoom;
+      const newXPx = midX + (startVXpx - midX) * r;
+      const newYPx = midY + (startVYpx - midY) * r;
       setViewport({
-        x:    midX + (startVX - midX) * (newZoom / startZoom),
-        y:    midY + (startVY - midY) * (newZoom / startZoom),
+        x:    displaySize.w > 0 ? newXPx / displaySize.w : 0,
+        y:    displaySize.h > 0 ? newYPx / displaySize.h : 0,
         zoom: newZoom,
       });
     }
@@ -392,7 +412,11 @@ export default function TicketStack({
       if (!dragRef.current) return;
       const dx = e.clientX - dragRef.current.startMX;
       const dy = e.clientY - dragRef.current.startMY;
-      setViewport(v => ({ ...v, x: dragRef.current.startVX + dx, y: dragRef.current.startVY + dy }));
+      setViewport(v => ({
+        ...v,
+        x: displaySize.w > 0 ? (dragRef.current.startVXpx + dx) / displaySize.w : v.x,
+        y: displaySize.h > 0 ? (dragRef.current.startVYpx + dy) / displaySize.h : v.y,
+      }));
     };
     const onUp = () => { dragRef.current = null; setDragging(false); };
     document.addEventListener("mousemove", onMove);
@@ -406,7 +430,7 @@ export default function TicketStack({
   function handleMouseDown(e) {
     if (e.button !== 0) return;
     e.preventDefault();
-    dragRef.current = { startMX: e.clientX, startMY: e.clientY, startVX: viewport.x, startVY: viewport.y };
+    dragRef.current = { startMX: e.clientX, startMY: e.clientY, startVXpx: viewport.x * displaySize.w, startVYpx: viewport.y * displaySize.h };
     setDragging(true);
   }
 
@@ -414,7 +438,7 @@ export default function TicketStack({
     if (e.touches.length === 1) {
       dragRef.current = {
         startMX: e.touches[0].clientX, startMY: e.touches[0].clientY,
-        startVX: viewport.x,           startVY: viewport.y,
+        startVXpx: viewport.x * displaySize.w, startVYpx: viewport.y * displaySize.h,
       };
       touchRef.current = null;
     } else if (e.touches.length === 2) {
@@ -425,8 +449,8 @@ export default function TicketStack({
         dist:      Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY),
         midX:      (t1.clientX + t2.clientX) / 2 - rect.left - rect.width  / 2,
         midY:      (t1.clientY + t2.clientY) / 2 - rect.top  - rect.height / 2,
-        startVX:   viewport.x,
-        startVY:   viewport.y,
+        startVXpx: viewport.x * displaySize.w,
+        startVYpx: viewport.y * displaySize.h,
         startZoom: viewport.zoom,
       };
     }
@@ -601,7 +625,7 @@ export default function TicketStack({
         <div
           className={`ts-viewport${interactive && dragging ? " ts-viewport--dragging" : ""}`}
           style={{
-            transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
+            transform: `translate(${viewport.x * displaySize.w}px, ${viewport.y * displaySize.h}px) scale(${viewport.zoom})`,
             transformOrigin: "center center",
             cursor: interactive ? undefined : "default",
           }}

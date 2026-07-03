@@ -324,18 +324,7 @@
 }
 
 .stack-preview-area {
-  /* Fills whatever vertical space is left in .stack-dialog (which is
-     clamped to max-height: 90vh) after the toolbar rows above it, instead
-     of always sizing to the canvas's own width-driven height. Without this,
-     a portrait/tall canvas ratio (e.g. 9:16) would size purely from
-     available width and end up taller than the dialog, so only part of it
-     was visible without scrolling — exactly the "doesn't show the full
-     16:9 canvas" bug in portrait 16:9. */
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: auto;
   border-radius: 8px;
+  min-height: 220px;
 }

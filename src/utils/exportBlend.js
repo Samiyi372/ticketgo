@@ -67,16 +67,35 @@ export async function captureNodeToCanvas(node, { pixelRatio, backgroundColor, f
     }
   }
 
+  // `scale` (screen px -> canvas px) is derived from getBoundingClientRect(),
+  // which reflects the node's *visual* size after any ancestor CSS transform
+  // — e.g. the single-ticket editor wraps the ticket in a responsive
+  // `transform: scale(...)` to fit narrow screens, which can shrink it well
+  // below its true size on mobile. html-to-image itself sizes the canvas
+  // from `node.clientWidth`, which ignores transforms entirely, so `scale`
+  // and the canvas's true pixel density only agree when nothing outside
+  // `node` is scaling it (true for hidden/offscreen capture nodes, false for
+  // the live, responsively-shrunk editor preview).
+  //
+  // That's fine for *positions*: an element's offset from `node`'s corner is
+  // measured in the same (shrunk) screen space for both points, so the
+  // shrink factor cancels out and `scale` converts it correctly. It's wrong
+  // for *sizes* like `el.offsetWidth`, which is already an unscaled CSS
+  // measurement — multiplying it by `scale` double-counts the ancestor
+  // shrink and inflates the drawn texture/decoration well past their real
+  // size. `trueScale`, derived from the untransformed clientWidth instead,
+  // is the correct multiplier for those.
   const scale = canvas.width / nodeRect.width;
+  const trueScale = canvas.width / node.clientWidth;
   const ctx = canvas.getContext("2d");
 
   // Draw in z-index order: texture first, then decoration.
   // (Background images are already composited by html-to-image above.)
   for (const el of textureEls) {
-    await drawTextureLayer(ctx, el, nodeRect, scale, node, cardEls);
+    await drawTextureLayer(ctx, el, nodeRect, scale, trueScale, node, cardEls);
   }
   for (const el of decorationEls) {
-    await drawDecorationLayer(ctx, el, nodeRect, scale, node, cardEls);
+    await drawDecorationLayer(ctx, el, nodeRect, scale, trueScale, node, cardEls);
   }
 
   // Render the divider notches. For single-ticket and collage exports (no
@@ -93,7 +112,7 @@ export async function captureNodeToCanvas(node, { pixelRatio, backgroundColor, f
       const cx = (rect.left + rect.width / 2 - nodeRect.left) * scale;
       const cy = (rect.top + rect.height / 2 - nodeRect.top) * scale;
       const r = (rect.width / 2) * scale;
-      const higherPolys = getOcclusionPolygons(el, cardEls, nodeRect, scale, node);
+      const higherPolys = getOcclusionPolygons(el, cardEls, nodeRect, scale, trueScale, node);
 
       const paint = (targetCtx) => {
         targetCtx.beginPath();
@@ -169,10 +188,14 @@ function getTransformToAncestor(el, ancestor) {
 
 // Resolves an element's centre, rotation and on-canvas size in one place so
 // texture/decoration/card-footprint code all agree on the same geometry.
-function computePlacement(el, nodeRect, scale, ancestor) {
+// `scale` (screen-space, may be contaminated by an ancestor transform
+// outside `ancestor`) is used for the centre position; `trueScale` (from
+// the untransformed clientWidth) is used for the size, since offsetWidth is
+// itself an untransformed measurement — see the note in captureNodeToCanvas.
+function computePlacement(el, nodeRect, scale, trueScale, ancestor) {
   const rect = el.getBoundingClientRect();
   const { angle, scale: localScale } = getTransformToAncestor(el, ancestor);
-  const totalScale = scale * localScale;
+  const totalScale = trueScale * localScale;
   const cx = (rect.left + rect.width / 2 - nodeRect.left) * scale;
   const cy = (rect.top + rect.height / 2 - nodeRect.top) * scale;
   const w = el.offsetWidth * totalScale;
@@ -205,18 +228,18 @@ function zIndexOf(el) {
 // Returns the on-canvas polygons of every card that sits above `el`'s own
 // card in the stack, so its texture/decoration/notch can be clipped away
 // from the area they occlude. Empty when `el` isn't part of a card stack.
-function getOcclusionPolygons(el, cardEls, nodeRect, scale, ancestor) {
+function getOcclusionPolygons(el, cardEls, nodeRect, scale, trueScale, ancestor) {
   if (!cardEls || cardEls.length === 0) return [];
   const ownCard = el.closest(CARD_SELECTOR);
   if (!ownCard) return [];
   const ownZ = zIndexOf(ownCard);
   return cardEls
     .filter((c) => c !== ownCard && zIndexOf(c) > ownZ)
-    .map((c) => polygonFromPlacement(computePlacement(c, nodeRect, scale, ancestor)));
+    .map((c) => polygonFromPlacement(computePlacement(c, nodeRect, scale, trueScale, ancestor)));
 }
 
-async function drawTextureLayer(ctx, el, nodeRect, scale, node, cardEls) {
-  const placement = computePlacement(el, nodeRect, scale, node);
+async function drawTextureLayer(ctx, el, nodeRect, scale, trueScale, node, cardEls) {
+  const placement = computePlacement(el, nodeRect, scale, trueScale, node);
   const { cx, cy, angle, w, h, totalScale } = placement;
   if (w <= 0 || h <= 0) return;
 
@@ -246,7 +269,7 @@ async function drawTextureLayer(ctx, el, nodeRect, scale, node, cardEls) {
     targetCtx.restore();
   };
 
-  const higherPolys = getOcclusionPolygons(el, cardEls, nodeRect, scale, node);
+  const higherPolys = getOcclusionPolygons(el, cardEls, nodeRect, scale, trueScale, node);
   if (higherPolys.length === 0) {
     ctx.save();
     ctx.globalCompositeOperation = "multiply";
@@ -280,8 +303,8 @@ async function drawTextureLayer(ctx, el, nodeRect, scale, node, cardEls) {
   ctx.restore();
 }
 
-async function drawDecorationLayer(ctx, imgEl, nodeRect, scale, node, cardEls) {
-  const placement = computePlacement(imgEl, nodeRect, scale, node);
+async function drawDecorationLayer(ctx, imgEl, nodeRect, scale, trueScale, node, cardEls) {
+  const placement = computePlacement(imgEl, nodeRect, scale, trueScale, node);
   const { cx, cy, angle, w, h } = placement;
   if (w <= 0 || h <= 0) return;
 
@@ -300,7 +323,7 @@ async function drawDecorationLayer(ctx, imgEl, nodeRect, scale, node, cardEls) {
     targetCtx.restore();
   };
 
-  const higherPolys = getOcclusionPolygons(imgEl, cardEls, nodeRect, scale, node);
+  const higherPolys = getOcclusionPolygons(imgEl, cardEls, nodeRect, scale, trueScale, node);
   if (higherPolys.length === 0) {
     ctx.save();
     ctx.globalCompositeOperation = blend;

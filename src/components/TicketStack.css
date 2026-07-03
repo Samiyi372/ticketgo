@@ -1,14 +1,6 @@
 .ts-output-canvas {
   position: relative;
-  /* Sized to fit within whatever box contains it (width AND height), not
-     just stretched to full width — a plain width: 100% here would let a
-     portrait/tall aspect-ratio (e.g. 9:16) grow taller than its container
-     since height would then be purely width-driven, requiring the parent
-     to scroll to see the rest of the canvas instead of showing it whole. */
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
   overflow: hidden;
   /* aspect-ratio set inline to match chosen ratio */
 }

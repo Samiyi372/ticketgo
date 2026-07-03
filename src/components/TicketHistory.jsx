@@ -488,6 +488,30 @@ export default function TicketHistory({ ticket, onLoad }) {
         <div className="stack-overlay" onClick={() => setStackView(null)}>
           <div className="stack-layout" onClick={(e) => e.stopPropagation()}>
           <div className="stack-dialog">
+            <div className="stack-preview-area">
+              <TicketStack
+                entries={selectedEntries}
+                mode={stackView.mode}
+                seed={stackView.seed}
+                validate={stackView.mode === "fan" || stackView.mode === "cascade"}
+                canvasRatio={stackView.ratio ?? "3:2"}
+                customW={stackView.customW}
+                customH={stackView.customH}
+                orientation={stackView.orientation ?? "landscape"}
+                bgColor={stackBg}
+                bgImage={stackBgImage}
+                cardScale={stackCardScale}
+                fanSpreadDeg={stackFanSpread}
+                fanPivot={stackFanPivot}
+                onFanPivotChange={setStackFanPivot}
+                fanAnchor={stackFanAnchor}
+                viewport={stackViewport}
+                onViewportChange={setStackViewport}
+                canvasRef={stackCanvasRef}
+                outputCanvasRef={stackOutputRef}
+              />
+            </div>
+
             {/* Row 1: mode + shuffle + export + close */}
             <div className="stack-toolbar">
               <div className="stack-mode-toggle">
@@ -682,30 +706,6 @@ export default function TicketHistory({ ticket, onLoad }) {
                   上传背景图
                 </button>
               )}
-            </div>
-
-            <div className="stack-preview-area">
-              <TicketStack
-                entries={selectedEntries}
-                mode={stackView.mode}
-                seed={stackView.seed}
-                validate={stackView.mode === "fan" || stackView.mode === "cascade"}
-                canvasRatio={stackView.ratio ?? "3:2"}
-                customW={stackView.customW}
-                customH={stackView.customH}
-                orientation={stackView.orientation ?? "landscape"}
-                bgColor={stackBg}
-                bgImage={stackBgImage}
-                cardScale={stackCardScale}
-                fanSpreadDeg={stackFanSpread}
-                fanPivot={stackFanPivot}
-                onFanPivotChange={setStackFanPivot}
-                fanAnchor={stackFanAnchor}
-                viewport={stackViewport}
-                onViewportChange={setStackViewport}
-                canvasRef={stackCanvasRef}
-                outputCanvasRef={stackOutputRef}
-              />
             </div>
           </div>
 
