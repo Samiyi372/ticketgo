@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getTemplateComponent } from "./templates";
-import { TICKET_WIDTH_MM, TICKET_HEIGHT_MM, EXPORT_PIXEL_RATIO } from "../utils/dimensions";
+import { TICKET_WIDTH_MM, TICKET_HEIGHT_MM } from "../utils/dimensions";
 import { repairLayout } from "../utils/stackGeometry";
 import { exportNodeToPng } from "../utils/export";
 import "./TicketStack.css";
@@ -8,6 +8,17 @@ import "./TicketStack.css";
 const MM_PX = 96 / 25.4;
 const CARD_W = TICKET_WIDTH_MM * MM_PX;
 const CARD_H = TICKET_HEIGHT_MM * MM_PX;
+
+// Resolution each card is individually baked to before being placed in the
+// stack. This used to be the full 300dpi EXPORT_PIXEL_RATIO (~3.125x) — but
+// every card in the stack is embedded as its own base64 <img>, and the final
+// composite capture re-embeds ALL of those inside one SVG data URI to
+// rasterise the whole canvas. With several full-300dpi cards that payload
+// balloons to tens of MB, which mobile browsers (Safari and Chromium alike)
+// silently fail to render as an image at all — producing a blank exported
+// PNG with no error. 2x is still sharp (a card only occupies a fraction of
+// the final, already-capped, output canvas) at a fraction of the data size.
+const CARD_BAKE_PIXEL_RATIO = 2;
 
 // ─── Ratio presets & export dimensions ───────────────────────────────────────
 export const RATIO_PRESETS = [
@@ -486,7 +497,7 @@ export default function TicketStack({
       const node = hiddenNodeRefs.current.get(key);
       if (!node) return;
       capturedKeysRef.current.add(key);
-      exportNodeToPng(node, { pixelRatio: EXPORT_PIXEL_RATIO })
+      exportNodeToPng(node, { pixelRatio: CARD_BAKE_PIXEL_RATIO })
         .then((dataUrl) => {
           if (cancelled) return;
           setCardImages((prev) => ({ ...prev, [key]: dataUrl }));
