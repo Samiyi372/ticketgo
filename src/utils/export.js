@@ -20,6 +20,14 @@ function dataUrlToFile(dataUrl, filename) {
   return new File([bytes], filename, { type: mime });
 }
 
+// Some desktop browsers (e.g. Chrome/Edge on Windows) implement enough of
+// the Web Share API to pass the feature checks below, but there's no photo
+// library for the share sheet to save into there — it would just be a more
+// roundabout way to do the same anchor download. Restrict the share-sheet
+// path to mobile, where it's the only way to get an image into the system
+// photo library at all.
+const IS_MOBILE = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
 // Mobile browsers (iOS Safari, Android Chrome, ...) can share a file straight
 // into the OS share sheet, which has a built-in "Save Image" / "存储图像" /
 // "保存到相册" action — there's no other way for a web page to put an image
@@ -27,7 +35,7 @@ function dataUrlToFile(dataUrl, filename) {
 // any mobile browser without file-sharing support) fall back to the plain
 // anchor-click download.
 export async function downloadDataUrl(dataUrl, filename) {
-  if (navigator.canShare && navigator.share) {
+  if (IS_MOBILE && navigator.canShare && navigator.share) {
     let file = null;
     try {
       file = dataUrlToFile(dataUrl, filename);
