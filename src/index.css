@@ -8,8 +8,13 @@
   box-sizing: border-box;
 }
 
-body {
+html, body {
   margin: 0;
+  /* Safety net: a flex child somewhere down the tree that can't shrink below
+     its content's width (long button text, etc.) would otherwise widen the
+     whole page and add a horizontal scrollbar instead of wrapping — most
+     visible on narrow mobile viewports once the history list gets content. */
+  overflow-x: hidden;
 }
 
 #root {

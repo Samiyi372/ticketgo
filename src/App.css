@@ -1,6 +1,12 @@
 .app-layout {
   display: flex;
   height: 100vh;
+  /* Without this, a flex item's default min-width:auto keeps it from ever
+     shrinking below its own content's natural width — on desktop there's
+     always enough room so this never bites, but on a narrow phone viewport
+     it's what lets .app-preview-panel (and everything under it) actually
+     shrink to fit instead of forcing the whole page wider than the screen. */
+  min-width: 0;
 }
 
 .app-form-panel {
@@ -43,6 +49,7 @@
 
 .app-preview-panel {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -75,6 +82,11 @@
   }
 
   .app-preview-panel {
+    /* Desktop centers children at their natural (shrink-to-fit) width, which
+       is exactly what let long, unbreakable content in the history list
+       widen the whole panel past the screen. Stretching to the panel's own
+       (now properly viewport-bounded) width lets that content wrap instead. */
+    align-items: stretch;
     padding: 20px;
     overflow-y: visible;
   }
