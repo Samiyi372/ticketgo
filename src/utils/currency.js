@@ -8,6 +8,7 @@ export const CURRENCIES = [
   { code: "HKD", label: "港币", symbol: "HK$" },
   { code: "SGD", label: "新加坡元", symbol: "S$" },
   { code: "RUB", label: "俄罗斯卢布", symbol: "₽" },
+  { code: "AUD", label: "澳元", symbol: "AU$" },
 ];
 
 export function getCurrencySymbol(code) {
